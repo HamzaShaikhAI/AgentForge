@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentForge Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+    .badge-read { background: #1e3a5f; color: #60a5fa; }
+    .badge-local-write { background: #1a3329; color: #4ade80; }
+    .badge-external-write { background: #3b2f1a; color: #fbbf24; }
+    .badge-publish { background: #3b1a3a; color: #c084fc; }
+    .badge-destructive { background: #3b1a1a; color: #f87171; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-available { background: var(--success); }
+    .status-missing { background: var(--danger); }
+    .status-optional { background: var(--warning); }
+    .tab { padding: 8px 16px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab:hover { color: var(--accent); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .btn { padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    details summary { cursor: pointer; list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          ⚒️ AgentForge Manager
+        </h1>
+        <p class="text-sm mt-1" style="color: var(--muted)">Extensible Capability Harness for Antigravity</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="showCreateBridge()">➕ Create Bridge</button>
+        <button class="btn btn-outline" onclick="refreshBridges()">Refresh</button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex gap-1 mb-6 border-b" style="border-color: var(--border)">
+      <div class="tab active" onclick="switchTab('bridges')" data-tab="bridges">Bridges</div>
+      <div class="tab" onclick="switchTab('workflows')" data-tab="workflows">Workflow Runs</div>
+      <div class="tab" onclick="switchTab('approvals')" data-tab="approvals">Approvals</div>
+      <div class="tab" onclick="switchTab('setup')" data-tab="setup">Setup Guide</div>
+    </nav>
+
+    <!-- Bridges Tab -->
+    <div id="tab-bridges">
+      <div id="bridges-loading" class="text-center py-12" style="color: var(--muted)">
+        Loading bridges...
+      </div>
+      <div id="bridges-container" class="grid gap-4" style="display: none;"></div>
+      <div id="bridges-empty" class="text-center py-12" style="display: none; color: var(--muted)">
+        <p class="text-lg mb-2">No bridges found</p>
+        <p class="text-sm">Create your first bridge or add bridge.json files to the bridges/ directory</p>
+      </div>
+    </div>
+
+    <!-- Workflows Tab -->
+    <div id="tab-workflows" style="display: none;">
+      <div class="card p-6">
+        <h3 class="font-semibold mb-4">Workflow Runs</h3>
+        <div id="workflow-runs" style="color: var(--muted)">
+          <p>No workflow runs recorded yet.</p>
+          <p class="text-sm mt-2">Workflows are executed through Antigravity. Results will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approvals Tab -->
+    <div id="tab-approvals" style="display: none;">
+      <div class="card p-6">
+        <h3 class="font-semibold mb-4">Approval History</h3>
+        <div id="approval-history" style="color: var(--muted)">
+          <p>No approvals recorded yet.</p>
+          <p class="text-sm mt-2">Approval records will appear here when operations requiring user consent are executed.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Setup Guide Tab -->
+    <div id="tab-setup" style="display: none;">
+      <div class="card p-6">
+        <h3 class="font-semibold mb-4">Setup Guide</h3>
+        <div class="space-y-4" style="color: var(--muted)">
+          <div>
+            <h4 class="font-medium" style="color: var(--text)">1. Install as Antigravity Plugin</h4>
+            <p class="text-sm mt-1">Copy or symlink the AgentForge directory to <code class="px-1 rounded" style="background: var(--bg)">~/.gemini/config/plugins/agentforge/</code></p>
+          </div>
+          <div>
+            <h4 class="font-medium" style="color: var(--text)">2. Build the Project</h4>
+            <p class="text-sm mt-1">Run <code class="px-1 rounded" style="background: var(--bg)">npm run build</code> to compile TypeScript</p>
+          </div>
+          <div>
+            <h4 class="font-medium" style="color: var(--text)">3. Configure Integrations</h4>
+            <p class="text-sm mt-1">Set environment variables for bridges that need them (e.g., <code class="px-1 rounded" style="background: var(--bg)">GITHUB_TOKEN</code>)</p>
+          </div>
+          <div>
+            <h4 class="font-medium" style="color: var(--text)">4. Restart Antigravity</h4>
+            <p class="text-sm mt-1">New plugins are discovered on startup. Restart Antigravity to activate AgentForge.</p>
+          </div>
+          <div>
+            <h4 class="font-medium" style="color: var(--text)">5. Create Bridges</h4>
+            <p class="text-sm mt-1">Add bridge.json files to the <code class="px-1 rounded" style="background: var(--bg)">bridges/</code> directory, or use the “+ Create Bridge” button above.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Bridge Modal -->
+    <div id="create-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;" onclick="if(event.target===this)hideCreateBridge()">
+      <div class="card p-6 max-w-2xl mx-auto mt-20" style="max-height: 80vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Create New Bridge</h3>
+          <button onclick="hideCreateBridge()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+        <form id="create-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Name (lowercase-kebab-case)</label>
+            <input type="text" name="name" pattern="[a-z][a-z0-9-]*" required class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="my-service">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Display Name</label>
+            <input type="text" name="displayName" required class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="My Service">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Description</label>
+            <textarea name="description" required rows="2" class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="What this bridge does..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Category</label>
+            <select name="category" class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">
+              <option value="source-control">Source Control</option>
+              <option value="ci-cd">CI/CD</option>
+              <option value="communication">Communication</option>
+              <option value="content-creation">Content Creation</option>
+              <option value="social-media">Social Media</option>
+              <option value="cloud-services">Cloud Services</option>
+              <option value="productivity">Productivity</option>
+              <option value="development" selected>Development</option>
+              <option value="media">Media</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Version</label>
+            <input type="text" name="version" value="0.1.0" class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">
+          </div>
+          <div id="generated-manifest" style="display: none;">
+            <label class="block text-sm font-medium mb-1">Generated Manifest (bridge.json)</label>
+            <pre class="p-3 rounded-lg text-sm overflow-x-auto" style="background: var(--bg); border: 1px solid var(--border);"><code id="manifest-preview"></code></pre>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-primary" onclick="generateManifest()">Generate Manifest</button>
+            <button type="button" class="btn btn-outline" onclick="copyManifest()">Copy to Clipboard</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let bridgesData = [];
+
+    // Tab switching
+    function switchTab(name) {
+      document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).style.display = '';
+      document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+    }
+
+    // Bridge loading
+    async function loadBridges() {
+      const container = document.getElementById('bridges-container');
+      const loading = document.getElementById('bridges-loading');
+      const empty = document.getElementById('bridges-empty');
+
+      try {
+        const resp = await fetch('/api/bridges');
+        if (resp.ok) {
+          bridgesData = await resp.json();
+        } else {
+          throw new Error('API not available');
+        }
+      } catch {
+        // Try loading from known bridge paths
+        bridgesData = [];
+        const knownBridges = ['github', 'example'];
+        for (const name of knownBridges) {
+          try {
+            const resp = await fetch(`../bridges/${name}/bridge.json`);
+            if (resp.ok) {
+              const manifest = await resp.json();
+              bridgesData.push({ manifest, enabled: true, integrationStatus: {} });
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      loading.style.display = 'none';
+
+      if (bridgesData.length === 0) {
+        empty.style.display = '';
+        return;
+      }
+
+      container.style.display = '';
+      container.innerHTML = bridgesData.map(renderBridge).join('');
+    }
+
+    function renderBridge(entry) {
+      const m = entry.manifest;
+      const caps = m.capabilities || [];
+      const integs = m.integrations || [];
+      const auths = m.auth || [];
+
+      return `
+        <div class="card p-5">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-lg">${m.displayName}</h3>
+                <span class="badge" style="background: var(--bg); color: var(--muted);">${m.version}</span>
+                ${m.category ? `<span class="badge" style="background: var(--bg); color: var(--accent);">${m.category}</span>` : ''}
+              </div>
+              <p class="text-sm mt-1" style="color: var(--muted)">${m.description}</p>
+            </div>
+            <span class="status-dot ${entry.enabled ? 'status-available' : 'status-missing'}" title="${entry.enabled ? 'Enabled' : 'Disabled'}"></span>
+          </div>
+
+          <div class="mt-4">
+            <details>
+              <summary class="text-sm font-medium flex items-center gap-1" style="color: var(--accent)">
+                ▶ ${caps.length} Capabilities
+              </summary>
+              <div class="mt-2 space-y-1 pl-4">
+                ${caps.map(c => `
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="badge badge-${c.permissionLevel}">${c.permissionLevel}</span>
+                    <span class="font-mono" style="font-size: 13px;">${c.action}</span>
+                    <span style="color: var(--muted)">— ${c.description}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          </div>
+
+          ${integs.length > 0 ? `
+          <div class="mt-3">
+            <details>
+              <summary class="text-sm font-medium flex items-center gap-1" style="color: var(--accent)">
+                ▶ ${integs.length} Integrations
+              </summary>
+              <div class="mt-2 space-y-1 pl-4">
+                ${integs.map(i => `
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="status-dot ${i.required ? 'status-missing' : 'status-optional'}" title="${i.required ? 'Required' : 'Optional'}"></span>
+                    <span class="font-medium">${i.name}</span>
+                    <span style="color: var(--muted)">${i.required ? '(required)' : '(optional)'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          </div>` : ''}
+
+          ${auths.length > 0 ? `
+          <div class="mt-3">
+            <details>
+              <summary class="text-sm font-medium flex items-center gap-1" style="color: var(--accent)">
+                ▶ ${auths.length} Auth Requirements
+              </summary>
+              <div class="mt-2 space-y-1 pl-4">
+                ${auths.map(a => `
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="status-dot ${a.required ? 'status-missing' : 'status-optional'}"></span>
+                    <span class="font-medium">${a.name}</span>
+                    <span style="color: var(--muted)">${a.description}</span>
+                    ${a.envVar ? `<code class="px-1 rounded" style="background: var(--bg); font-size: 12px;">${a.envVar}</code>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          </div>` : ''}
+
+          ${m.tags ? `
+          <div class="flex gap-1 mt-3 flex-wrap">
+            ${m.tags.map(t => `<span class="badge" style="background: var(--bg); color: var(--muted); font-size: 11px;">#${t}</span>`).join('')}
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    function refreshBridges() {
+      document.getElementById('bridges-container').style.display = 'none';
+      document.getElementById('bridges-loading').style.display = '';
+      document.getElementById('bridges-empty').style.display = 'none';
+      loadBridges();
+    }
+
+    // Create Bridge
+    function showCreateBridge() {
+      document.getElementById('create-modal').style.display = '';
+      document.getElementById('generated-manifest').style.display = 'none';
+    }
+
+    function hideCreateBridge() {
+      document.getElementById('create-modal').style.display = 'none';
+    }
+
+    function generateManifest() {
+      const form = document.getElementById('create-form');
+      const data = new FormData(form);
+      const manifest = {
+        schema: '1.0',
+        name: data.get('name'),
+        displayName: data.get('displayName'),
+        description: data.get('description'),
+        version: data.get('version'),
+        category: data.get('category'),
+        capabilities: [
+          {
+            action: 'example-action',
+            description: 'Replace with your action description',
+            permissionLevel: 'read',
+            sideEffects: false,
+          }
+        ],
+        integrations: [],
+        auth: [],
+        permissions: [
+          {
+            actions: '*',
+            level: 'read',
+            requiresApproval: false,
+          }
+        ],
+        tags: [data.get('name')],
+      };
+
+      document.getElementById('manifest-preview').textContent = JSON.stringify(manifest, null, 2);
+      document.getElementById('generated-manifest').style.display = '';
+    }
+
+    function copyManifest() {
+      const text = document.getElementById('manifest-preview').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Manifest copied to clipboard! Save it as bridges/<name>/bridge.json');
+      });
+    }
+
+    // Init
+    loadBridges();
+  </script>
+</body>
+</html>

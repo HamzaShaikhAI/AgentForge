@@ -1,0 +1,202 @@
+{
+  "schema": "1.0",
+  "name": "github",
+  "displayName": "GitHub",
+  "description": "GitHub repository management: inspect repos, check status, prepare releases, verify commits. Uses git CLI and GitHub REST API.",
+  "version": "0.1.0",
+  "author": "AgentForge",
+  "category": "source-control",
+  "capabilities": [
+    {
+      "action": "repo-info",
+      "description": "Get repository information including remotes, branches, and latest commits",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "path", "type": "string", "description": "Path to the git repository", "required": false }
+      ],
+      "outputs": [
+        { "name": "remotes", "type": "array", "description": "List of remote URLs" },
+        { "name": "branch", "type": "string", "description": "Current branch name" },
+        { "name": "latestCommit", "type": "string", "description": "Latest commit SHA" }
+      ]
+    },
+    {
+      "action": "branch-list",
+      "description": "List all local and remote branches",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "status-check",
+      "description": "Check working tree status, staged changes, and divergence from remote",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "log-inspect",
+      "description": "View commit history with optional filtering",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "count", "type": "number", "description": "Number of commits to show", "default": 10 },
+        { "name": "since", "type": "string", "description": "Show commits after this date", "required": false }
+      ]
+    },
+    {
+      "action": "diff-review",
+      "description": "Review changes between branches, tags, or commits",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "base", "type": "string", "description": "Base reference (branch, tag, or SHA)" },
+        { "name": "head", "type": "string", "description": "Head reference", "required": false }
+      ]
+    },
+    {
+      "action": "changelog-prepare",
+      "description": "Generate a changelog from commit history between two references",
+      "permissionLevel": "local-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "from", "type": "string", "description": "Start reference (tag or SHA)" },
+        { "name": "to", "type": "string", "description": "End reference", "default": "HEAD" }
+      ]
+    },
+    {
+      "action": "tag-create",
+      "description": "Create a local git tag (does NOT push)",
+      "permissionLevel": "local-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "name", "type": "string", "description": "Tag name (e.g., v1.0.0)", "required": true },
+        { "name": "message", "type": "string", "description": "Tag annotation message", "required": false }
+      ]
+    },
+    {
+      "action": "push-commits",
+      "description": "Push local commits to remote",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "remote", "type": "string", "description": "Remote name", "default": "origin" },
+        { "name": "branch", "type": "string", "description": "Branch to push", "required": false }
+      ]
+    },
+    {
+      "action": "push-tags",
+      "description": "Push tags to remote",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "remote", "type": "string", "description": "Remote name", "default": "origin" },
+        { "name": "tag", "type": "string", "description": "Specific tag to push", "required": false }
+      ]
+    },
+    {
+      "action": "release-create",
+      "description": "Create a GitHub release (requires GITHUB_TOKEN)",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "tag", "type": "string", "description": "Tag for the release", "required": true },
+        { "name": "title", "type": "string", "description": "Release title", "required": true },
+        { "name": "body", "type": "string", "description": "Release notes", "required": true },
+        { "name": "draft", "type": "boolean", "description": "Create as draft", "default": false },
+        { "name": "prerelease", "type": "boolean", "description": "Mark as pre-release", "default": false }
+      ]
+    },
+    {
+      "action": "release-verify",
+      "description": "Verify a release exists on GitHub",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "tag", "type": "string", "description": "Tag to verify", "required": true }
+      ]
+    },
+    {
+      "action": "branch-delete",
+      "description": "Delete a branch (local or remote)",
+      "permissionLevel": "destructive",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "branch", "type": "string", "description": "Branch to delete", "required": true },
+        { "name": "remote", "type": "boolean", "description": "Delete from remote too", "default": false }
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "name": "git",
+      "check": { "type": "command", "value": "git --version", "expectedPattern": "git version" },
+      "required": true,
+      "setupInstructions": "Install Git from https://git-scm.com/downloads"
+    },
+    {
+      "name": "github-cli",
+      "check": { "type": "command", "value": "gh --version", "expectedPattern": "gh version" },
+      "required": false,
+      "setupInstructions": "Install GitHub CLI from https://cli.github.com/ (optional — API token can be used instead)"
+    }
+  ],
+  "auth": [
+    {
+      "name": "github-token",
+      "type": "env-var",
+      "envVar": "GITHUB_TOKEN",
+      "description": "GitHub Personal Access Token for API operations (releases, etc.)",
+      "required": false,
+      "scopes": ["repo", "read:org"]
+    },
+    {
+      "name": "github-cli-auth",
+      "type": "cli-auth",
+      "description": "GitHub CLI authentication via `gh auth login`",
+      "required": false
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "repo-info|branch-list|status-check|log-inspect|diff-review|release-verify",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "changelog-prepare|tag-create",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "push-commits",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "This will push commits to the remote repository"
+    },
+    {
+      "actions": "push-tags|release-create",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "This will create a public release on GitHub"
+    },
+    {
+      "actions": "branch-delete",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "This will permanently delete a branch"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["windows", "macos", "linux"],
+    "requiredTools": ["git"]
+  },
+  "test": {
+    "smokeTest": "git --version",
+    "verificationSteps": [
+      "Run 'git --version' to confirm git is available",
+      "Run 'git remote -v' in a repository to verify repo access",
+      "Check GITHUB_TOKEN is set if API operations are needed"
+    ]
+  },
+  "tags": ["github", "git", "source-control", "releases", "repositories"]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "agentforge",
+  "version": "0.1.0",
+  "description": "Extensible capability harness for Google Antigravity",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "manager": "node dist/manager/serve.js",
+    "demo": "node dist/demo.js"
+  },
+  "keywords": ["antigravity", "plugin", "bridges", "automation"],
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

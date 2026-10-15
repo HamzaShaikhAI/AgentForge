@@ -1,0 +1,73 @@
+{
+  "schema": "1.0",
+  "name": "example-echo",
+  "displayName": "Example Echo Bridge",
+  "description": "A minimal example bridge for testing. Echoes input back as output without any external dependencies.",
+  "version": "1.0.0",
+  "author": "AgentForge",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "echo",
+      "description": "Echo the input message back as output",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "message", "type": "string", "description": "Message to echo", "required": true }
+      ],
+      "outputs": [
+        { "name": "echoed", "type": "string", "description": "The echoed message" }
+      ]
+    },
+    {
+      "action": "write-file",
+      "description": "Write a message to a local file (example of local-write)",
+      "permissionLevel": "local-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "path", "type": "string", "description": "File path to write to", "required": true },
+        { "name": "content", "type": "string", "description": "Content to write", "required": true }
+      ]
+    },
+    {
+      "action": "publish-example",
+      "description": "Simulated publish action (requires approval, does nothing real)",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "target", "type": "string", "description": "Publish target", "required": true }
+      ]
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "echo",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "write-file",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "publish-example",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "This simulates publishing — in a real bridge this would be an external action"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["windows", "macos", "linux"]
+  },
+  "test": {
+    "smokeTest": "echo AgentForge example bridge OK",
+    "verificationSteps": [
+      "Run the echo action and verify output matches input",
+      "Verify publish-example requires approval"
+    ]
+  },
+  "tags": ["example", "testing", "development"]
+}
