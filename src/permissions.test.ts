@@ -71,7 +71,7 @@ describe('PermissionManager', () => {
     expect(result.requiresApproval).toBe(false);
   });
 
-  it('allows after recording approval', () => {
+  it('allows after recording approval without input constraint', () => {
     const before = pm.checkPermission(mockBridge, 'push-remote');
     expect(before.allowed).toBe(false);
 
@@ -80,6 +80,43 @@ describe('PermissionManager', () => {
     const after = pm.checkPermission(mockBridge, 'push-remote');
     expect(after.allowed).toBe(true);
     expect(after.reason).toContain('Previously approved');
+  });
+
+  it('proves approval applies to specific inputs and rejects mismatched inputs', () => {
+    // Record approval strictly for target: 'staging'
+    pm.recordApproval('test-bridge', 'publish-release', 'publish', 'user', 'Staging verified', {
+      target: 'staging',
+      tag: 'v1.0.0-rc1',
+    });
+
+    // 1. Same inputs -> Allowed
+    const matchingCheck = pm.checkPermission(mockBridge, 'publish-release', {
+      target: 'staging',
+      tag: 'v1.0.0-rc1',
+    });
+    expect(matchingCheck.allowed).toBe(true);
+    expect(matchingCheck.requiresApproval).toBe(false);
+
+    // 2. Different target (e.g. production) -> Blocked! Requires approval!
+    const mismatchedTarget = pm.checkPermission(mockBridge, 'publish-release', {
+      target: 'production',
+      tag: 'v1.0.0-rc1',
+    });
+    expect(mismatchedTarget.allowed).toBe(false);
+    expect(mismatchedTarget.requiresApproval).toBe(true);
+
+    // 3. Different tag -> Blocked! Requires approval!
+    const mismatchedTag = pm.checkPermission(mockBridge, 'publish-release', {
+      target: 'staging',
+      tag: 'v1.0.0-prod',
+    });
+    expect(mismatchedTag.allowed).toBe(false);
+    expect(mismatchedTag.requiresApproval).toBe(true);
+
+    // 4. Missing inputs when approval was input-bound -> Blocked!
+    const missingInputs = pm.checkPermission(mockBridge, 'publish-release');
+    expect(missingInputs.allowed).toBe(false);
+    expect(missingInputs.requiresApproval).toBe(true);
   });
 
   it('records and retrieves approvals', () => {

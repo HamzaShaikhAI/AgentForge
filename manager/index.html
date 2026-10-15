@@ -169,7 +169,10 @@
             <input type="text" name="version" value="0.1.0" class="w-full px-3 py-2 rounded-lg" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">
           </div>
           <div id="generated-manifest" style="display: none;">
-            <label class="block text-sm font-medium mb-1">Generated Manifest (bridge.json)</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium">Generated Manifest (bridge.json)</label>
+              <span id="validation-badge" class="badge"></span>
+            </div>
             <pre class="p-3 rounded-lg text-sm overflow-x-auto" style="background: var(--bg); border: 1px solid var(--border);"><code id="manifest-preview"></code></pre>
           </div>
           <div class="flex gap-2">
@@ -330,20 +333,20 @@
       document.getElementById('create-modal').style.display = 'none';
     }
 
-    function generateManifest() {
+    async function generateManifest() {
       const form = document.getElementById('create-form');
       const data = new FormData(form);
       const manifest = {
         schema: '1.0',
-        name: data.get('name'),
-        displayName: data.get('displayName'),
-        description: data.get('description'),
-        version: data.get('version'),
-        category: data.get('category'),
+        name: data.get('name') || 'my-service',
+        displayName: data.get('displayName') || 'My Service',
+        description: data.get('description') || 'Custom bridge description',
+        version: data.get('version') || '0.1.0',
+        category: data.get('category') || 'development',
         capabilities: [
           {
-            action: 'example-action',
-            description: 'Replace with your action description',
+            action: 'inspect',
+            description: 'Inspect status and items',
             permissionLevel: 'read',
             sideEffects: false,
           }
@@ -357,11 +360,34 @@
             requiresApproval: false,
           }
         ],
-        tags: [data.get('name')],
+        tags: [data.get('name') || 'custom'],
       };
 
-      document.getElementById('manifest-preview').textContent = JSON.stringify(manifest, null, 2);
+      const jsonStr = JSON.stringify(manifest, null, 2);
+      document.getElementById('manifest-preview').textContent = jsonStr;
       document.getElementById('generated-manifest').style.display = '';
+
+      // Validate against server
+      const badge = document.getElementById('validation-badge');
+      if (badge) {
+        badge.textContent = 'Validating...';
+        badge.className = 'badge';
+        try {
+          const resp = await fetch('/api/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: jsonStr,
+          });
+          if (resp.ok) {
+            const res = await resp.json();
+            badge.textContent = res.valid ? '✓ Valid Manifest (Schema 1.0)' : `✕ Invalid (${res.errors.length} errors)`;
+            badge.className = `badge ${res.valid ? 'badge-local-write' : 'badge-destructive'}`;
+          }
+        } catch {
+          badge.textContent = 'Offline Draft';
+          badge.className = 'badge badge-read';
+        }
+      }
     }
 
     function copyManifest() {

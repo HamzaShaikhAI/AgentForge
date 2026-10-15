@@ -150,6 +150,81 @@ describe('WorkflowEngine', () => {
     expect(retryExecutor.execute).toHaveBeenCalledTimes(3);
   });
 
+  it('does not re-execute completed steps upon resuming a stopped workflow', async () => {
+    const run = engine.createRun(simpleWorkflow);
+    // Execute step 1 only
+    const step1OnlyWorkflow: WorkflowDefinition = {
+      ...simpleWorkflow,
+      steps: [simpleWorkflow.steps[0]],
+    };
+    await engine.executeRun(step1OnlyWorkflow, run);
+    expect(executor.execute).toHaveBeenCalledTimes(1);
+    expect(run.steps[0].status).toBe('completed');
+
+    // Resume full workflow with step 1 already completed
+    await engine.executeRun(simpleWorkflow, run);
+    // executor should only have been called 1 MORE time (for step 2), not 2 more times!
+    expect(executor.execute).toHaveBeenCalledTimes(2);
+    expect(run.steps[1].status).toBe('completed');
+  });
+
+  it('records failed step truthfully without reporting success', async () => {
+    const errorExecutor: StepExecutor = {
+      execute: vi.fn().mockRejectedValue(new Error('Fatal execution failure')),
+    };
+    const failEngine = new WorkflowEngine(registry, permissions, errorExecutor);
+
+    const run = failEngine.createRun(simpleWorkflow);
+    const result = await failEngine.executeRun(simpleWorkflow, run);
+
+    expect(result.status).toBe('failed');
+    expect(result.steps[0].status).toBe('failed');
+    expect(result.steps[0].error).toBe('Fatal execution failure');
+    expect(result.error).toContain('Fatal execution failure');
+  });
+
+  it('enforces input-bound approval in multi-step workflow', async () => {
+    const publishWorkflow: WorkflowDefinition = {
+      id: 'publish-wf',
+      name: 'Publish Workflow',
+      description: 'Tests publish approval with specific inputs',
+      steps: [
+        {
+          id: 'step-pub',
+          name: 'Publish to Prod',
+          bridge: 'test-bridge',
+          action: 'risky-action',
+          inputs: { env: 'production', version: '2.0.0' },
+        },
+      ],
+      createdAt: new Date().toISOString(),
+    };
+
+    // 1. Initial attempt without approval -> stopped
+    let run = engine.createRun(publishWorkflow);
+    run = await engine.executeRun(publishWorkflow, run);
+    expect(run.status).toBe('stopped');
+    expect(run.steps[0].status).toBe('waiting-approval');
+
+    // 2. Approve for staging only -> still stopped!
+    permissions.recordApproval('test-bridge', 'risky-action', 'publish', 'user', 'Staging only', {
+      env: 'staging',
+      version: '2.0.0',
+    });
+    run = await engine.executeRun(publishWorkflow, run);
+    expect(run.status).toBe('stopped');
+    expect(run.steps[0].status).toBe('waiting-approval');
+
+    // 3. Approve for production -> proceeds!
+    permissions.recordApproval('test-bridge', 'risky-action', 'publish', 'user', 'Prod approved', {
+      env: 'production',
+      version: '2.0.0',
+    });
+    run = await engine.executeRun(publishWorkflow, run);
+    expect(run.status).toBe('completed');
+    expect(run.steps[0].status).toBe('completed');
+  });
+
   it('summarizes a run with status icons', () => {
     const run = engine.createRun(simpleWorkflow);
     run.steps[0].status = 'completed';
@@ -161,3 +236,4 @@ describe('WorkflowEngine', () => {
     expect(summary).toContain('Something went wrong');
   });
 });
+

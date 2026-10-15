@@ -8,6 +8,7 @@ import {
 } from './types.js';
 import { PermissionManager } from './permissions.js';
 import { BridgeRegistry } from './bridge-registry.js';
+import { StandardStepExecutor } from './executors/index.js';
 
 export interface StepExecutor {
   /**
@@ -28,11 +29,15 @@ export interface StepExecutor {
  * - Failures stop execution by default (unless step says otherwise)
  */
 export class WorkflowEngine {
+  private executor: StepExecutor;
+
   constructor(
     private registry: BridgeRegistry,
     private permissions: PermissionManager,
-    private executor?: StepExecutor,
-  ) {}
+    executor?: StepExecutor,
+  ) {
+    this.executor = executor || new StandardStepExecutor();
+  }
 
   /**
    * Create a new workflow run from a definition.
@@ -64,6 +69,11 @@ export class WorkflowEngine {
       const stepResult = this.getStepResult(run, step.id);
       if (!stepResult) continue;
 
+      // Do not re-execute steps that already completed in a prior pass
+      if (stepResult.status === 'completed') {
+        continue;
+      }
+
       // Check dependencies
       if (step.dependsOn?.length) {
         const depsReady = step.dependsOn.every(depId => {
@@ -77,7 +87,7 @@ export class WorkflowEngine {
         }
       }
 
-      // Check permissions
+      // Check permissions with specific step inputs
       const bridge = this.registry.get(step.bridge);
       if (!bridge) {
         stepResult.status = 'failed';
@@ -91,7 +101,7 @@ export class WorkflowEngine {
         continue;
       }
 
-      const permCheck = this.permissions.checkPermission(bridge.manifest, step.action);
+      const permCheck = this.permissions.checkPermission(bridge.manifest, step.action, step.inputs);
       if (!permCheck.allowed) {
         if (permCheck.requiresApproval) {
           stepResult.status = 'waiting-approval';
@@ -148,10 +158,13 @@ export class WorkflowEngine {
       }
     }
 
-    // All steps completed
+    // All steps processed
     if (run.status === 'running') {
       const hasFailures = run.steps.some(s => s.status === 'failed');
       run.status = hasFailures ? 'failed' : 'completed';
+      if (!hasFailures) {
+        delete run.error;
+      }
       run.completedAt = new Date().toISOString();
     }
 

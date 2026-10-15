@@ -13,6 +13,7 @@ export interface ApprovalRecord {
   approvedAt: string;
   approvedBy: string;
   reason?: string;
+  inputs?: Record<string, unknown>;
 }
 
 export interface PermissionCheckResult {
@@ -37,10 +38,12 @@ export class PermissionManager {
 
   /**
    * Check whether an action is allowed under current approvals.
+   * If inputs are provided, ensures approval applies to the specific action and relevant inputs.
    */
   checkPermission(
     bridge: BridgeManifest,
     action: string,
+    inputs?: Record<string, unknown>,
   ): PermissionCheckResult {
     const capability = bridge.capabilities.find(c => c.action === action);
     if (!capability) {
@@ -64,16 +67,23 @@ export class PermissionManager {
       return { allowed: true, requiresApproval: false, level, reason: 'Local writes are allowed by default' };
     }
 
-    // Check if we have a prior approval
-    const existingApproval = this.approvals.find(
-      a => a.bridge === bridge.name && a.action === action,
-    );
+    // Check if we have a prior matching approval
+    const existingApproval = this.approvals.find(a => {
+      if (a.bridge !== bridge.name || a.action !== action) return false;
+      // If the approval record was bound to specific inputs, verify match
+      if (a.inputs !== undefined) {
+        if (!inputs) return false;
+        return this.matchInputs(a.inputs, inputs);
+      }
+      return true;
+    });
+
     if (existingApproval) {
       return {
         allowed: true,
         requiresApproval: false,
         level,
-        reason: `Previously approved at ${existingApproval.approvedAt}`,
+        reason: `Previously approved at ${existingApproval.approvedAt}${existingApproval.inputs ? ' for matching inputs' : ''}`,
       };
     }
 
@@ -95,7 +105,7 @@ export class PermissionManager {
   }
 
   /**
-   * Record an approval decision.
+   * Record an approval decision, optionally binding it to specific inputs.
    */
   recordApproval(
     bridge: string,
@@ -103,6 +113,7 @@ export class PermissionManager {
     level: PermissionLevel,
     approvedBy: string = 'user',
     reason?: string,
+    inputs?: Record<string, unknown>,
   ): ApprovalRecord {
     const record: ApprovalRecord = {
       bridge,
@@ -111,9 +122,19 @@ export class PermissionManager {
       approvedAt: new Date().toISOString(),
       approvedBy,
       reason,
+      inputs: inputs ? JSON.parse(JSON.stringify(inputs)) : undefined,
     };
     this.approvals.push(record);
     return record;
+  }
+
+  private matchInputs(expected: Record<string, unknown>, actual: Record<string, unknown>): boolean {
+    for (const [key, val] of Object.entries(expected)) {
+      if (JSON.stringify(val) !== JSON.stringify(actual[key])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

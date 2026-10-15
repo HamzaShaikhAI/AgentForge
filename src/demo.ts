@@ -1,8 +1,9 @@
 import { resolve, join } from 'node:path';
 import { BridgeRegistry } from './bridge-registry.js';
 import { PermissionManager } from './permissions.js';
-import { WorkflowEngine, StepExecutor } from './workflow-engine.js';
-import { WorkflowDefinition, WorkflowStep } from './types.js';
+import { WorkflowEngine } from './workflow-engine.js';
+import { WorkflowDefinition } from './types.js';
+import { StandardStepExecutor } from './executors/index.js';
 
 async function main() {
   console.log('====================================================');
@@ -22,85 +23,115 @@ async function main() {
     console.error('   Discovery errors:', errors);
   }
 
-  // 2. Inspect GitHub Bridge Definition
-  const githubBridge = registry.get('github');
-  if (githubBridge) {
-    console.log('\n2. Inspecting GitHub Bridge Manifest:');
-    console.log(`   Display Name: ${githubBridge.manifest.displayName}`);
-    console.log(`   Capabilities: ${githubBridge.manifest.capabilities.length} available actions`);
-    console.log('   Integration Requirements:');
-    for (const req of githubBridge.manifest.integrations) {
-      console.log(`     - ${req.name}: ${req.required ? '[REQUIRED]' : '[OPTIONAL]'} (Check: ${req.check.value})`);
-    }
-  }
+  // 2. Real GitHub Read-Only Workflow
+  console.log('\n2. Executing Real GitHub Read-Only Workflow against local repository:');
+  console.log(`   Target Repository: ${root}`);
 
-  // 3. Setup Workflow Engine and Permissions
-  console.log('\n3. Preparing Sample Multi-Step Workflow...');
   const permissions = new PermissionManager();
-
-  // Mock executor simulating safe local execution
-  const executor: StepExecutor = {
-    async execute(step: WorkflowStep, inputs: Record<string, unknown>) {
-      if (step.action === 'echo') {
-        return { echoed: inputs.message, timestamp: new Date().toISOString() };
-      }
-      if (step.action === 'publish-example') {
-        return { publishedTo: inputs.target, success: true, timestamp: new Date().toISOString() };
-      }
-      throw new Error(`Unhandled action: ${step.action}`);
-    },
-  };
-
+  const executor = new StandardStepExecutor();
   const engine = new WorkflowEngine(registry, permissions, executor);
 
-  const sampleWorkflow: WorkflowDefinition = {
-    id: 'demo-workflow',
-    name: 'Safe Demo Execution Workflow',
-    description: 'Demonstrates multi-step dependencies and permission gating',
+  const realGitWorkflow: WorkflowDefinition = {
+    id: 'real-github-read-workflow',
+    name: 'Real GitHub Repository Inspection',
+    description: 'Inspects real branch, working tree status, and release info',
     steps: [
       {
-        id: 'step-1-read',
-        name: 'Echo Test Input',
-        bridge: 'example-echo',
-        action: 'echo',
-        inputs: { message: 'AgentForge core harness initialized successfully.' },
+        id: 'inspect-repo',
+        name: 'Repository Metadata',
+        bridge: 'github',
+        action: 'repo-info',
+        inputs: { path: root },
       },
       {
-        id: 'step-2-publish',
-        name: 'Simulated Publish Action',
-        bridge: 'example-echo',
-        action: 'publish-example',
-        inputs: { target: 'staging-registry' },
-        dependsOn: ['step-1-read'],
+        id: 'inspect-status',
+        name: 'Working Tree Status',
+        bridge: 'github',
+        action: 'status-check',
+        inputs: { path: root },
+        dependsOn: ['inspect-repo'],
+      },
+      {
+        id: 'inspect-releases',
+        name: 'Release and Tag Status',
+        bridge: 'github',
+        action: 'release-verify',
+        inputs: { path: root },
+        dependsOn: ['inspect-status'],
       },
     ],
     createdAt: new Date().toISOString(),
   };
 
-  // 4. Run Workflow (Demonstrate Approval Interception)
-  console.log('\n4. Executing Workflow without prior approval (Safety Gate Demonstration):');
-  let run = engine.createRun(sampleWorkflow);
-  run = await engine.executeRun(sampleWorkflow, run);
+  let gitRun = engine.createRun(realGitWorkflow);
+  gitRun = await engine.executeRun(realGitWorkflow, gitRun);
 
-  console.log('   Resulting Status:', run.status);
-  console.log('   Execution Summary:');
-  console.log(engine.summarizeRun(run).split('\n').map(l => '     ' + l).join('\n'));
+  console.log('   Workflow Run Status:', gitRun.status);
+  for (const step of gitRun.steps) {
+    console.log(`   - Step "${step.stepId}": ${step.status}`);
+    if (step.output) {
+      const outputLines = JSON.stringify(step.output, null, 2)
+        .split('\n')
+        .slice(0, 10);
+      console.log('     Output preview:');
+      outputLines.forEach(l => console.log('       ' + l));
+      if (outputLines.length === 10) console.log('       ...');
+    }
+    if (step.error) {
+      console.log(`     Error: ${step.error}`);
+    }
+  }
 
-  // 5. Grant Explicit Approval and Resume
-  console.log('\n5. Simulating Explicit User Approval for Step 2 (publish-example)...');
+  // 3. Approval Boundary Proof (Specific Action and Inputs Gating)
+  console.log('\n3. Proving Approval Boundary with Specific Action & Input Gating:');
+  const publishWorkflow: WorkflowDefinition = {
+    id: 'publish-boundary-workflow',
+    name: 'Publishing Guard Demonstration',
+    description: 'Demonstrates strict approval requirement for external publishing',
+    steps: [
+      {
+        id: 'publish-prod',
+        name: 'Publish to Production Target',
+        bridge: 'example-echo',
+        action: 'publish-example',
+        inputs: { target: 'production', version: '1.0.0' },
+      },
+    ],
+    createdAt: new Date().toISOString(),
+  };
+
+  let pubRun = engine.createRun(publishWorkflow);
+  pubRun = await engine.executeRun(publishWorkflow, pubRun);
+  console.log(`   Attempt 1 (No Approval): Status = ${pubRun.status}`);
+  console.log(`   Step status = ${pubRun.steps[0].status} (Reason: ${pubRun.steps[0].error})`);
+
+  // Simulate approval with MISMATCHED inputs
+  console.log('\n   Attempt 2: Granting approval for { target: "staging" } instead of "production"...');
   permissions.recordApproval(
     'example-echo',
     'publish-example',
     'publish',
-    'User (Confirmed via Antigravity)',
-    'User authorized simulated staging release'
+    'User (Audit log)',
+    'Approved staging only',
+    { target: 'staging', version: '1.0.0' }
   );
+  pubRun = await engine.executeRun(publishWorkflow, pubRun);
+  console.log(`   Attempt 2 Result: Status = ${pubRun.status} (Mismatched input strictly blocked!)`);
 
-  console.log('   Re-executing workflow with granted approval:');
-  run = await engine.executeRun(sampleWorkflow, run);
-  console.log('   Resulting Status:', run.status);
-  console.log('   Execution Summary:');
-  console.log(engine.summarizeRun(run).split('\n').map(l => '     ' + l).join('\n'));
+  // Grant approval for MATCHING inputs
+  console.log('\n   Attempt 3: Granting explicit approval for exact target: "production"...');
+  permissions.recordApproval(
+    'example-echo',
+    'publish-example',
+    'publish',
+    'User (Audit log)',
+    'Approved production release after verification',
+    { target: 'production', version: '1.0.0' }
+  );
+  pubRun = await engine.executeRun(publishWorkflow, pubRun);
+  console.log(`   Attempt 3 Result: Status = ${pubRun.status}`);
+  console.log(`   Step status = ${pubRun.steps[0].status}`);
+  console.log(`   Step output: ${JSON.stringify(pubRun.steps[0].output)}`);
 
   console.log('\n====================================================');
   console.log('   AgentForge Demonstration Complete (Truthful Output) ');

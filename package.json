@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "manager": "node dist/manager/serve.js",
-    "demo": "node dist/demo.js"
+    "demo": "node dist/demo.js",
+    "mcp": "node dist/mcp-server.js"
   },
   "keywords": ["antigravity", "plugin", "bridges", "automation"],
   "license": "MIT",
