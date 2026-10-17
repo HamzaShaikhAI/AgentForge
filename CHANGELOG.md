@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] - Unreleased (Target Release Qualified)
+
+### Added
+- **Universal MCP Presets (Phase 3):**
+  - Curated catalog of 52 verified MCP server presets across 12 distinct categories.
+  - Stdio and HTTP transport execution with permission inference and environment schema validation.
+- **25 Native Service Adapters (Phase 4):**
+  - Standardized `BaseIntegrationAdapter` framework with health checks and schema enforcement.
+  - 25 native adapters covering Filesystem, HTTP, SQLite, Git, YouTube, Docker, Cloudflare, S3, PostgreSQL, Redis, MongoDB, Slack, Discord, Notion, Jira, Linear, Sentry, Stripe, Twilio, SendGrid, Brave Search, Tavily, and Working Memory.
+  - 26 validated bridge manifests in `bridges/`.
+- **15 Advanced Platform Features (Phase 5):**
+  - Workflow dynamic step conditions, pipe transformation filters, env interpolation, timeout overrides, cleanup compensation hooks, dry-run mode.
+  - Cryptographic audit hash chain (SHA-256) with tamper detection, timing-safe webhook ingress (`crypto.timingSafeEqual`), token-bucket rate limiter, scoped delegation tokens, encrypted vault backup/restore.
+  - Adapter health monitoring, interactive step debugging, Antigravity skill generator, structured run artifacts.
+- **4 Flagship Production Workflows (Phase 6):**
+  - Autonomous Release Pipeline (`wf-autonomous-release`).
+  - Multi-Channel Content Publishing (`wf-multichannel-publish`).
+  - Incident Response & Triage (`wf-incident-triage`).
+  - Data Pipeline & Local Database Sync (`wf-data-pipeline-sync`).
+- **Local Manager UI Redesign:**
+  - Complete dark/light tokenized theme with persistent local storage.
+  - 12 operational views providing real-time diagnostics, visual workflow execution, and approval gates.
+- **Open-Source Maintenance Infrastructure:**
+  - GitHub issue templates for bug reports and feature requests.
+  - Pull request template with security and local-first checklists.
+  - Contributor Covenant Code of Conduct v2.1.
+  - Release engineering guide, support/diagnostics guide, and multi-version roadmap.
+
+---
+
 ## [0.2.0] - 2026-10-17
+
 
 ### Added
 - **Production Google OAuth Readiness (Milestone 7.2):**

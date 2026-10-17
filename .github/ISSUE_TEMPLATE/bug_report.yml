@@ -1,0 +1,78 @@
+name: Bug Report
+description: Create a report to help us improve AgentForge
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue in AgentForge! Please provide as much verifiable detail as possible.
+        Ensure you do NOT include API keys, passwords, or personal credentials in your report.
+  - type: input
+    id: version
+    attributes:
+      label: AgentForge Version
+      description: What version of AgentForge are you running? (e.g., 1.0.0, commit SHA)
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows 10 / 11
+        - macOS (Apple Silicon / Intel)
+        - Linux (Ubuntu, Debian, Fedora, etc.)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: Run `node -v` and paste the version here.
+      placeholder: "v20.x or v22.x"
+    validations:
+      required: true
+  - type: textarea
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of AgentForge is affected? (e.g., Workflow Engine, Manager UI, OAuth Loopback, Stdio MCP Manager, Adapter)
+      placeholder: "e.g., WorkflowEngine step condition evaluation"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Start Manager with 'npm run manager'
+        2. Navigate to '...'
+        3. Trigger workflow '...'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs & Output
+      description: Please copy and paste any relevant terminal output or error messages (redacted of secrets).
+      render: shell

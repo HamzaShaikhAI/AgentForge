@@ -1,4 +1,4 @@
-﻿# AgentForge System Architecture
+# AgentForge System Architecture
 
 AgentForge is an extensible capability and workflow harness built specifically for **Google Antigravity**. Rather than attempting to replace Antigravity or act as an autonomous reasoning agent, AgentForge serves as the deterministic execution, security, and integration runtime.
 
@@ -113,6 +113,18 @@ Evaluates actions against a 5-tier permission model:
 - Enforces an approval barrier before promoting staged bridges to active status.
 
 ### 3.7 Local Manager Dashboard (`src/manager/`)
-- Runs a local loopback HTTP server (`http://localhost:9470`) serving a Tailwind-styled responsive dashboard (`manager/index.html`).
+- Runs a local loopback HTTP server (`http://localhost:9470`) serving a CSS-tokenized, dark/light responsive dashboard (`manager/index.html`).
 - Enforces host and origin security to block unauthorized cross-site requests and DNS rebinding attacks.
 - Provides visual controls for bridges, catalog search, workflow runs, approval checkpoints, OAuth status, and custom bridge generation.
+
+### 3.8 Native Service Adapters Framework (`src/adapters/`)
+- Standardized on `BaseIntegrationAdapter` abstract class enforcing health checks, schema validation, action execution, and permission levels.
+- Provides 25 native production adapters covering Filesystem, HTTP, SQLite, Git, YouTube, Docker, Cloudflare, AWS S3, PostgreSQL, Redis, MongoDB, Slack, Discord, Notion, Jira, Linear, Sentry, Stripe, Twilio, SendGrid, Brave Search, Tavily, and Working Memory.
+- Auto-registers with `StandardStepExecutor` for zero-overhead workflow action dispatch.
+
+### 3.9 Platform Features & Truth Foundation (`src/truth/`, `src/audit/`, `src/triggers/`, `src/governance/`)
+- **CapabilityTruthEngine:** Performs ground-truth inspection of host PATH binaries, bridge health, and active server connections.
+- **AuditChain:** Forward-linked cryptographic ledger using SHA-256 to ensure log integrity and tamper detection.
+- **Webhook Ingress:** Timing-safe HMAC signature verification (`crypto.timingSafeEqual`) for secure external triggers.
+- **Governance:** Token-bucket rate limiters and scoped, time-bounded delegation tokens.
+- **Step Debugger & Skill Generator:** Interactive workflow breakpoint stepping and auto-generated Antigravity skill definitions.

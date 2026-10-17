@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest an idea or enhancement for AgentForge
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature for AgentForge!
+        Please review our [Architecture Guide](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md) before submitting.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem or architectural friction? Please describe clearly.
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / Enhancement
+      description: Describe what you would like AgentForge to do and how it aligns with our local-first, Antigravity-native philosophy.
+      placeholder: "Add support for..."
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - Native Service Adapter
+        - Universal MCP Preset / Transport
+        - Workflow Engine & Orchestration
+        - Security, OAuth & Credential Storage
+        - Manager UI & Visualizations
+        - Antigravity Skill / Rule Integration
+        - Developer Tooling & CLI
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions Considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+  - type: checkboxes
+    id: agreement
+    attributes:
+      label: Architectural Alignment
+      options:
+        - label: I confirm this feature respects AgentForge's local-first architecture (no centralized proxy relays or telemetry).
+          required: true
+        - label: I confirm this feature adheres to deterministic permission boundaries and approval checkpoints.
+          required: true
