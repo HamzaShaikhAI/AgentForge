@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "slack",
+  "displayName": "Slack",
+  "category": "communication",
+  "description": "Slack channel communication and webhook dispatches.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "list-channels",
+      "description": "List public channels in workspace",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "post-message",
+      "description": "Send message to a channel",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "post-webhook",
+      "description": "Post payload to Slack webhook",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "list-channels",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "post-message|post-webhook",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Broadcasts message to Slack channel"
+    }
+  ]
+}

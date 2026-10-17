@@ -1,0 +1,60 @@
+{
+  "schema": "1.0",
+  "name": "filesystem",
+  "displayName": "Local Filesystem",
+  "description": "Secure, local-first file and directory operations with path containment.",
+  "version": "1.0.0",
+  "category": "productivity",
+  "capabilities": [
+    {
+      "action": "read-file",
+      "description": "Read full content of a file from disk",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "write-file",
+      "description": "Write or overwrite content to a file",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-dir",
+      "description": "List files and directories in path",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "stat-file",
+      "description": "Inspect size and modification timestamps",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "delete-file",
+      "description": "Delete file from disk",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "read-file|list-dir|stat-file",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "write-file",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "delete-file",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Permanently deletes file from filesystem"
+    }
+  ]
+}

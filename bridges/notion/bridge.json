@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "notion",
+  "displayName": "Notion",
+  "category": "productivity",
+  "description": "Notion workspace pages and database queries.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "query-database",
+      "description": "Query records in database",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-page",
+      "description": "Retrieve properties and metadata of a page",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-page",
+      "description": "Create a new Notion page",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "query-database|get-page",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-page",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Creates page in Notion workspace"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "jira",
+  "displayName": "Atlassian Jira",
+  "description": "Agile issue queries and workflow transitions.",
+  "version": "1.0.0",
+  "category": "productivity",
+  "capabilities": [
+    {
+      "action": "search-issues",
+      "description": "Search issues using JQL query",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-issue",
+      "description": "Inspect issue details by key",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "transition-issue",
+      "description": "Transition issue status",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "search-issues|get-issue",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "transition-issue",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Modifies Jira issue status in team project"
+    }
+  ]
+}

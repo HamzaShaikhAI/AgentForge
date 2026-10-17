@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "stripe",
+  "displayName": "Stripe Payments",
+  "category": "cloud-services",
+  "description": "Stripe billing, customer query, and invoice management.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "get-customer",
+      "description": "Retrieve customer account details by ID",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-invoices",
+      "description": "List recent customer invoices and statuses",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-balance",
+      "description": "Inspect available account balance and currency",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-customer|list-invoices|get-balance",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "1.0",
+  "name": "tavily",
+  "displayName": "Tavily Research",
+  "category": "productivity",
+  "description": "AI-optimized factual research search with citations.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "search",
+      "description": "Execute factual research query returning summaries and sources",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "extract",
+      "description": "Extract clean markdown content from specific web URLs",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "search|extract",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

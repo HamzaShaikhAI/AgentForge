@@ -1,0 +1,31 @@
+{
+  "schema": "1.0",
+  "name": "brave-search",
+  "displayName": "Brave Search",
+  "category": "productivity",
+  "description": "Privacy-preserving web search and local business queries.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "web-search",
+      "description": "Search web indexed pages",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "local-search",
+      "description": "Search local businesses and locations",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "web-search|local-search",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

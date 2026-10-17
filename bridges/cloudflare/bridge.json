@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "cloudflare",
+  "displayName": "Cloudflare",
+  "description": "Cloudflare DNS zones and Workers inspection.",
+  "version": "1.0.0",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "list-zones",
+      "description": "List domain zones",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-dns-records",
+      "description": "List DNS records for zone",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-workers",
+      "description": "List deployed Cloudflare Workers",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "list-zones|get-dns-records|list-workers",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

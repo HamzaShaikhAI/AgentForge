@@ -1,0 +1,55 @@
+{
+  "schema": "1.0",
+  "name": "github-api",
+  "displayName": "GitHub REST API",
+  "description": "GitHub issues, pull requests, and repository releases.",
+  "version": "1.0.0",
+  "category": "source-control",
+  "capabilities": [
+    {
+      "action": "get-issue",
+      "description": "Get details of an issue by repository and number",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-issue",
+      "description": "Open a new issue in repository",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-pull-requests",
+      "description": "List open pull requests in repository",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-pull-request",
+      "description": "Open a new pull request",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-issue|list-pull-requests",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-issue",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Creates public issue on GitHub"
+    },
+    {
+      "actions": "create-pull-request",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "Opens pull request on GitHub repository"
+    }
+  ]
+}

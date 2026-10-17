@@ -1,0 +1,48 @@
+{
+  "schema": "1.0",
+  "name": "sqlite",
+  "displayName": "SQLite Database",
+  "description": "Local SQLite database query execution and table inspection.",
+  "version": "1.0.0",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "read-query",
+      "description": "Execute read-only SQL query",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "write-query",
+      "description": "Execute INSERT, UPDATE, or DELETE SQL statement",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-tables",
+      "description": "List user tables in database",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "schema-inspect",
+      "description": "Inspect table columns and constraints",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "read-query|list-tables|schema-inspect",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "write-query",
+      "level": "local-write",
+      "requiresApproval": false
+    }
+  ]
+}

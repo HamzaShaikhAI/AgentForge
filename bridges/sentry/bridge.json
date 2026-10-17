@@ -1,0 +1,31 @@
+{
+  "schema": "1.0",
+  "name": "sentry",
+  "displayName": "Sentry Error Reporting",
+  "description": "Runtime crash reports, stack traces, and issue analytics.",
+  "version": "1.0.0",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "list-issues",
+      "description": "List unresolved crashes",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-issue-details",
+      "description": "Inspect crash details and stack trace",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "list-issues|get-issue-details",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

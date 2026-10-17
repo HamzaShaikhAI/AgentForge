@@ -1,0 +1,42 @@
+{
+  "schema": "1.0",
+  "name": "memory",
+  "displayName": "Knowledge Graph Memory",
+  "category": "productivity",
+  "description": "Local graph memory store for persistent entities, attributes, and relationships.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "add-entity",
+      "description": "Create or update an entity in knowledge graph",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "query-graph",
+      "description": "Retrieve all knowledge graph entities and relations",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "search-nodes",
+      "description": "Search graph entities matching query",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "query-graph|search-nodes",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "add-entity",
+      "level": "local-write",
+      "requiresApproval": false
+    }
+  ]
+}

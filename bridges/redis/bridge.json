@@ -1,0 +1,48 @@
+{
+  "schema": "1.0",
+  "name": "redis",
+  "displayName": "Redis Cache",
+  "description": "Redis in-memory key-value cache client.",
+  "version": "1.0.0",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "get-key",
+      "description": "Read value of key",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "set-key",
+      "description": "Set key with value",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-key",
+      "description": "Delete key from Redis",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-key",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "set-key",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "delete-key",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Deletes key from Redis datastore"
+    }
+  ]
+}

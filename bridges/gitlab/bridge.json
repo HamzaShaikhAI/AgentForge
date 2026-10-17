@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "gitlab",
+  "displayName": "GitLab API",
+  "description": "GitLab project inspection and merge requests.",
+  "version": "1.0.0",
+  "category": "source-control",
+  "capabilities": [
+    {
+      "action": "get-project",
+      "description": "Get project metadata",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-merge-requests",
+      "description": "List merge requests",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-merge-request",
+      "description": "Create a new merge request",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-project|list-merge-requests",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-merge-request",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "Creates merge request on GitLab"
+    }
+  ]
+}

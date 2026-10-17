@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "discord",
+  "displayName": "Discord",
+  "category": "communication",
+  "description": "Discord channel messaging and webhook notifications.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "read-messages",
+      "description": "Read messages in channel",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "post-message",
+      "description": "Send message to channel via bot",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "send-webhook",
+      "description": "Post payload to webhook",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "read-messages",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "post-message|send-webhook",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Broadcasts message to Discord channel"
+    }
+  ]
+}

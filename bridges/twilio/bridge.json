@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "twilio",
+  "displayName": "Twilio SMS",
+  "category": "communication",
+  "description": "Send SMS messages and check delivery status.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "send-sms",
+      "description": "Send SMS to phone number",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-message-status",
+      "description": "Inspect SMS delivery receipt",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-message-status",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "send-sms",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Sends real SMS message via carrier network"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "1.0",
+  "name": "http",
+  "displayName": "HTTP & REST Client",
+  "category": "development",
+  "description": "Outbound HTTP client with SSRF loopback protections.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "get",
+      "description": "HTTP GET request",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "post",
+      "description": "HTTP POST request",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "put",
+      "description": "HTTP PUT request",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete",
+      "description": "HTTP DELETE request",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "post|put",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Dispatches outbound HTTP payload to remote endpoint"
+    },
+    {
+      "actions": "delete",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Sends HTTP DELETE request to remote resource"
+    }
+  ]
+}

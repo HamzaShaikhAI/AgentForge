@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "aws-s3",
+  "displayName": "AWS S3 Storage",
+  "description": "Amazon S3 bucket and object storage management.",
+  "version": "1.0.0",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "list-buckets",
+      "description": "List S3 buckets",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-objects",
+      "description": "List object keys in bucket",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-object-meta",
+      "description": "Retrieve object metadata",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "list-buckets|list-objects|get-object-meta",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

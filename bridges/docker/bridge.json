@@ -1,0 +1,43 @@
+{
+  "schema": "1.0",
+  "name": "docker",
+  "displayName": "Docker Engine",
+  "description": "Manage and inspect local Docker containers and logs.",
+  "version": "1.0.0",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "list-containers",
+      "description": "List running and stopped containers",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "container-logs",
+      "description": "Retrieve container stdout/stderr logs",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "restart-container",
+      "description": "Restart a container by ID",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "list-containers|container-logs",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "restart-container",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Restarts container process"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "1.0",
+  "name": "mongodb",
+  "displayName": "MongoDB",
+  "category": "cloud-services",
+  "description": "Document database queries and insertions.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "find-documents",
+      "description": "Query documents in collection",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "count-documents",
+      "description": "Count documents matching filter",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "insert-document",
+      "description": "Insert document into collection",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "find-documents|count-documents",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "insert-document",
+      "level": "local-write",
+      "requiresApproval": false
+    }
+  ]
+}

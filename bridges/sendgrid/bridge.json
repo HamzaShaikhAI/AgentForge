@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "sendgrid",
+  "displayName": "SendGrid Email",
+  "category": "communication",
+  "description": "Send transactional emails and inspect delivery analytics.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "action": "send-email",
+      "description": "Send transactional email to recipient",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-stats",
+      "description": "Inspect delivery and bounce metrics",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "get-stats",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "send-email",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Dispatches real email to recipient"
+    }
+  ]
+}

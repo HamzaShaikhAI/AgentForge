@@ -1,0 +1,37 @@
+{
+  "schema": "1.0",
+  "name": "linear",
+  "displayName": "Linear",
+  "description": "Linear issue tracking and project management.",
+  "version": "1.0.0",
+  "category": "productivity",
+  "capabilities": [
+    {
+      "action": "search-issues",
+      "description": "Search Linear issues",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-issue",
+      "description": "Create an engineering issue",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "search-issues",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-issue",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Creates engineering issue in Linear"
+    }
+  ]
+}

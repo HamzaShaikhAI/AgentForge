@@ -1,0 +1,31 @@
+{
+  "schema": "1.0",
+  "name": "postgres",
+  "displayName": "PostgreSQL",
+  "description": "PostgreSQL database query execution and table inspection.",
+  "version": "1.0.0",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "execute-query",
+      "description": "Run SQL query on database",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-tables",
+      "description": "List tables in current schema",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [],
+  "auth": [],
+  "permissions": [
+    {
+      "actions": "execute-query|list-tables",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}
