@@ -1,297 +1,284 @@
-# AgentForge
+﻿# AgentForge
 
-**Extensible Capability Harness for Google Antigravity**
+[![CI](https://github.com/HamzaShaikhAI/AgentForge/actions/workflows/ci.yml/badge.svg)](https://github.com/HamzaShaikhAI/AgentForge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node: >=20](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org)
+[![TypeScript: 5.6](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org)
 
-AgentForge is an Antigravity plugin that adds bridge-based integrations, multi-step workflows, approval policies, and a local manager dashboard. Antigravity remains the reasoning agent and primary interface — AgentForge supplies reusable capabilities, permission enforcement, and verifiable execution results.
+**Local-first capability and integration harness for Google Antigravity.**
 
-## Quick Start
+AgentForge provides structured bridge manifests, external Model Context Protocol (MCP) connectivity, deterministic permission gating, durable multi-step workflow execution, and a local web dashboard for **Google Antigravity**.
+
+---
+
+## 1. Why AgentForge?
+
+Large Language Model reasoning agents excel at planning, analysis, and code synthesis, but interacting with external tools and third-party APIs presents critical architectural challenges:
+- **Uncontrolled Side Effects:** Autonomous agents executing arbitrary shell commands or remote API calls risk accidental publishing, destructive deletions, or quota burn.
+- **Credential Sprawl:** Hardcoding API keys or scattering tokens across `.env` files compromises security and leaks secrets into source control.
+- **Fragmented Tooling:** Third-party services, local CLI utilities, and external MCP servers each require separate protocol adapters and error handlers.
+
+**AgentForge solves this by serving as Antigravity's deterministic execution runtime:**
+- **Antigravity Remains the Brain:** Antigravity handles high-level cognitive reasoning, prompt interpretation, and user dialogue.
+- **Deterministic Permission Boundaries:** Actions with external or destructive side effects halt at cryptographic approval checkpoints before execution.
+- **Local-First & OS-Protected:** Tokens are encrypted using Windows DPAPI (or AES-256-GCM on Unix) in user storage outside the repositoryâ€”zero centralized brokers, zero external telemetry.
+- **Unified Catalog:** Merges native bridges, external MCP tools, and custom user-generated bridges into a single searchable capability catalog.
+
+---
+
+## 2. Key Features
+
+- ðŸ›¡ï¸ **Deterministic 5-Tier Permissions:** Classifies every action (`read`, `local-write`, `external-write`, `publish`, `destructive`) with mandatory operator approval checkpoints for high-risk operations.
+- ðŸ” **OS-Protected Credential Isolation:** Zero tokens in git. Credentials write strictly to `%APPDATA%\AgentForge\auth\` or `~/.config/agentforge/auth/` using Windows DPAPI or AES-256-GCM.
+- ðŸ”‘ **Native Desktop OAuth 2.0 (RFC 8252 & RFC 7636):** Direct loopback authentication (`http://127.0.0.1:8910/callback`) with SHA-256 PKCE verifiers, DNS-rebinding protection, and automatic secret redaction.
+- ðŸŽ¬ **Production YouTube Bridge:** Real YouTube Data API v3 operations for channel inspection, metadata queries, uploads playlist listing, and resumable video uploads with local SHA-256 verification and quota cost tracking.
+- ðŸ™ **Local Git & GitHub Integration:** Real repository inspection, branch listing, log inspection, diff reviews, and release verification via local Git CLI.
+- ðŸ”Œ **External MCP Connectivity:** Connects to any Model Context Protocol server via `stdio` or `sse`/`http`, automatically inferring tool permissions and enabling workflow invocation.
+- âš¡ **Durable Workflow Engine:** Multi-step DAG workflows with structured step chaining (`$steps.<id>.output.<field>`), bounded retries, cooperative cancellation, and persistent history.
+- ðŸ› ï¸ **Custom Bridge Builder:** Generates valid bridge manifests and executors from natural language prompts, complete with static security analysis and isolated sandbox tests.
+- ðŸ–¥ï¸ **Local Manager Dashboard:** Responsive local web portal on `http://localhost:9470` for visual bridge inspection, workflow monitoring, approval reviews, and OAuth status.
+
+---
+
+## 3. Capability Status Matrix
+
+AgentForge clearly separates operational features from manifest declarations:
+
+| Component / Bridge | Capability / Action | Permission Tier | Operational Status | Prerequisites |
+|---|---|---|---|---|
+| **GitHub Bridge** | `repo-info` | `read` | âœ… **Fully Operational** | Local Git repository |
+| **GitHub Bridge** | `status-check` | `read` | âœ… **Fully Operational** | Local Git repository |
+| **GitHub Bridge** | `branch-list` | `read` | âœ… **Fully Operational** | Local Git repository |
+| **GitHub Bridge** | `log-inspect` | `read` | âœ… **Fully Operational** | Local Git repository |
+| **GitHub Bridge** | `diff-review` | `read` | âœ… **Fully Operational** | Local Git repository |
+| **GitHub Bridge** | `release-verify` | `read` | âœ… **Fully Operational** | Local Git repo + optional `GITHUB_TOKEN` |
+| **GitHub Bridge** | *Write / Release Actions* | `publish` | â³ *Declared in Manifest* | Planned Milestone |
+| **YouTube Bridge** | `channel-inspect` | `read` | âœ… **Fully Operational** | Google OAuth (`youtube.readonly`) |
+| **YouTube Bridge** | `channel-metadata` | `read` | âœ… **Fully Operational** | Google OAuth (`youtube.readonly`) |
+| **YouTube Bridge** | `video-list` | `read` | âœ… **Fully Operational** | Google OAuth (`youtube.readonly`) |
+| **YouTube Bridge** | `video-upload` | `publish` | âœ… **Fully Operational** | Google OAuth (`youtube.upload`) + Approval |
+| **External MCP** | Dynamic Server Tools | Inferred | âœ… **Fully Operational** | Running MCP server (`stdio` or `http`) |
+| **Workflow Engine** | DAG Chaining & Checkpoints | Dynamic | âœ… **Fully Operational** | None (in-memory & disk persistence) |
+| **Bridge Builder** | Natural Language Generation | Configured | âœ… **Fully Operational** | Staged & approved by operator |
+
+*For complete capability details and action schemas, see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).*
+
+---
+
+## 4. Architecture Overview
+
+```mermaid
+flowchart TD
+    subgraph Host["Google Antigravity Host"]
+        User["User Prompt"] --> Agent["Antigravity Reasoning Agent"]
+        Agent --> Skill["AgentForge Skill (SKILL.md)"]
+        Agent --> Rules["Security & Approval Rules (AGENTS.md)"]
+    end
+
+    subgraph Core["AgentForge Execution Runtime"]
+        Skill --> Registry["BridgeRegistry"]
+        Rules --> Perms["PermissionManager"]
+        Agent --> Engine["WorkflowEngine"]
+
+        Registry --> Catalog["Unified Catalog"]
+        Engine --> Perms
+        Engine --> Router["StandardStepExecutor"]
+
+        Router --> GitExec["GitExecutor (Git CLI)"]
+        Router --> YouTubeExec["YouTubeExecutor (Data API v3)"]
+        Router --> McpRouter["McpManager (External MCP)"]
+        Router --> CustomExec["Custom Bridge Executors"]
+
+        Builder["BridgeBuilder"] --> Security["SecurityAnalyzer"]
+        Builder --> Sandbox["Sandbox Tests"]
+        Builder --> Registry
+    end
+
+    subgraph SecuritySubsystem["OS-Protected Security & Auth"]
+        OAuth["GoogleOAuthService (RFC 8252 PKCE)"] --> Loopback["Loopback Server (127.0.0.1:8910)"]
+        OAuth --> DPAPI["Windows DPAPI / AES-256 Store"]
+        DPAPI --> Storage["%APPDATA%/AgentForge/auth/"]
+        Redactor["Secret Redaction Engine"] --> Engine
+        Redactor --> OAuth
+    end
+
+    subgraph DashboardSubsystem["Local Control Center"]
+        Server["Manager Server (Port 9470)"] --> UI["manager/index.html"]
+        Server --> Registry
+        Server --> Catalog
+        Server --> Engine
+    end
+```
+
+*For in-depth architectural details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).*
+
+---
+
+## 5. Quick Start (Windows-First)
 
 ### Prerequisites
+- **Node.js:** `>= 20.0.0` (LTS recommended)
+- **Git:** `>= 2.30.0`
+- **Google Antigravity:** Installed locally
 
-- **Node.js** 20+ (tested with v24.12.0)
-- **Git** (for the GitHub bridge)
-- **Google Antigravity** installed
-
-### Install & Build
-
-```bash
-# Clone or navigate to the project
+### 1. Clone & Build
+```powershell
+# Clone the repository
+git clone https://github.com/HamzaShaikhAI/AgentForge.git
 cd AgentForge
 
 # Install dependencies
-npm install
+npm ci
 
-# Build TypeScript
+# Compile TypeScript
 npm run build
 
-# Run tests
+# Run the test suite (18 test files, 256 passing tests)
 npm test
 ```
 
-### Install as Antigravity Plugin
-
-**Option A: Symlink (recommended for development)**
-
+### 2. Register as an Antigravity Plugin
+Run PowerShell as Administrator or with Developer Mode enabled:
 ```powershell
-# Windows (PowerShell, run as Administrator)
+# Create directory junction in the Antigravity user plugin directory
 New-Item -ItemType Junction -Path "$env:USERPROFILE\.gemini\config\plugins\agentforge" -Target "$PWD"
 ```
 
+*(On macOS/Linux, run: `mkdir -p ~/.gemini/config/plugins && ln -s "$(pwd)" ~/.gemini/config/plugins/agentforge`)*
+
+### 3. Launch the Local Manager Dashboard
+```powershell
+npm run manager
+```
+Open **`http://localhost:9470`** in your browser to view active bridges, inspect the unified catalog, and review workflow runs.
+
+*For complete setup options, see [docs/INSTALLATION.md](docs/INSTALLATION.md).*
+
+---
+
+## 6. External MCP Connectivity
+
+AgentForge can connect to and orchestrate any Model Context Protocol (MCP) server.
+
+### Adding an MCP Server
+You can add servers via the Manager dashboard UI (`http://localhost:9470`) or CLI:
+
 ```bash
-# macOS / Linux
-ln -s /path/to/AgentForge ~/.gemini/config/plugins/agentforge
+# Stdio server (spawns local subprocess)
+node dist/cli/index.js mcp add filesystem --transport stdio --command npx --args "-y,@modelcontextprotocol/server-filesystem,C:\\Projects"
+
+# SSE / HTTP server (connects to remote endpoint)
+node dist/cli/index.js mcp add remote-db --transport sse --url "http://127.0.0.1:8000/sse"
 ```
 
-**Option B: Copy**
-
-```bash
-cp -r AgentForge ~/.gemini/config/plugins/agentforge
+### Using MCP Tools in Workflows
+Reference tools in workflow steps using the `mcp:<server_id>` prefix:
+```json
+{
+  "id": "fetch-files",
+  "bridge": "mcp:filesystem",
+  "action": "list_directory",
+  "inputs": { "path": "C:\\Projects" }
+}
 ```
+*For transport options and permission inference, see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).*
 
-After installing, **restart Antigravity** for the plugin to be discovered.
+---
 
-### Install from GitHub (when available)
+## 7. Authentication & Google OAuth Setup
 
-```bash
-git clone https://github.com/<owner>/AgentForge.git
-cd AgentForge
-npm install && npm run build
-# Then symlink or copy to ~/.gemini/config/plugins/agentforge
+AgentForge connects to Google services using direct native Desktop OAuth (RFC 8252) with SHA-256 PKCE verifiers.
+
+### Zero-Configuration Mode (Ordinary Users)
+In packaged production releases, AgentForge discovers the official publisher client ID automatically. Users click **Connect Google** in the dashboard or run:
+```powershell
+npm run auth google
 ```
+The browser opens Google's sign-in page, redirects to `http://127.0.0.1:8910/callback`, and securely saves tokens to Windows DPAPI.
 
-## Architecture
+### Developer Mode (Custom OAuth Client)
+If self-hosting or testing with your own Google Cloud project:
+1. Create a **Desktop app** OAuth Client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Configure AgentForge:
+   ```powershell
+   node dist/cli/index.js auth configure --client-id "<PROJECT_NUM>-<HASH>.apps.googleusercontent.com"
+   ```
+3. Or copy `.env.example` to `.env` and set `GOOGLE_CLIENT_ID`.
 
-```
-AgentForge/
-├── plugin.json              # Antigravity plugin manifest
-├── skills/
-│   └── agentforge/
-│       └── SKILL.md         # AgentForge skill for Antigravity
-├── rules/
-│   └── AGENTS.md            # Always-on security rules
-├── bridges/                 # Bridge definitions
-│   ├── github/
-│   │   └── bridge.json      # GitHub bridge manifest
-│   └── example/
-│       └── bridge.json      # Example echo bridge (for testing)
-├── src/                     # Core TypeScript library
-│   ├── types.ts             # Type definitions & bridge schema
-│   ├── bridge-validator.ts  # Manifest validation
-│   ├── bridge-registry.ts   # Discovery & registry
-│   ├── workflow-engine.ts   # Multi-step workflow execution
-│   ├── permissions.ts       # Approval policy enforcement
-│   ├── manager/
-│   │   └── serve.ts         # Manager dashboard server
-│   └── *.test.ts            # Test files
-├── manager/
-│   └── index.html           # Manager dashboard UI
-└── data/                    # Runtime state (gitignored)
-```
+*For Google verification tiers and troubleshooting, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).*
 
-## Key Concepts
+---
 
-### Bridges
+## 8. YouTube Video Uploading & Publishing
 
-A **bridge** is a validated integration definition stored as `bridges/<name>/bridge.json`. Each bridge defines:
+The YouTube bridge provides resumable video uploading with verification safeguards:
 
-- **Capabilities** — actions it can perform (e.g., `repo-info`, `push-commits`)
-- **Integrations** — required tools and services (e.g., `git`, `gh` CLI)
-- **Authentication** — credentials referenced by env var name (never plaintext)
-- **Permissions** — approval tiers for each action
-- **Tests** — how to verify the bridge works
+1. **Incremental Scope Authorization:** Connect with upload permissions:
+   ```powershell
+   npm run auth youtube -- --upload
+   ```
+2. **File Validation:** Computes SHA-256 and byte size before upload to ensure integrity.
+3. **Approval Gating:** Uploading consumes **1,600 YouTube API quota units** and publishes content publicly or unlisted. The workflow engine automatically halts for operator approval before dispatching the upload.
 
-### Permission Tiers
+*For upload parameters and workflow examples, see [docs/WORKFLOWS.md](docs/WORKFLOWS.md).*
 
-| Level | Default Policy | Examples |
-|-------|---------------|----------|
-| `read` | Always allowed | List repos, check status |
-| `local-write` | Allowed by default | Create local files |
-| `external-write` | **Requires approval** | Push commits |
-| `publish` | **Requires approval** | Create releases |
-| `destructive` | **Requires approval** | Delete branches |
+---
 
-### Workflows
+## 9. CLI Command Reference
 
-Antigravity can combine bridge capabilities into multi-step workflows with:
-- Ordered steps with dependency tracking
-- Permission checks at each step
-- Retry logic for transient failures
-- Error reporting with safe stopping
-- Timestamped execution results
-
-## Commands
+AgentForge provides a unified CLI (`agentforge` / `npm run cli`):
 
 | Command | Description |
-|---------|-------------|
-| `npm run cli -- <args>` | Execute the unified AgentForge CLI |
-| `npm run auth -- status` | Check authentication mode and connection status |
-| `npm run auth -- google` | Run guided Google OAuth authorization (Zero-Config or Developer Mode) |
-| `npm run auth -- configure --client-id <id>` | Save Developer Mode credentials locally |
-| `npm run auth -- logout google` | Revoke and delete stored Google credentials |
-| `npm run auth -- help` | Display setup guide and publisher requirements |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm test` | Run all tests with Vitest |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Type-check without emitting |
-| `npm run manager` | Start the Manager dashboard |
+|---|---|
+| `npm run auth status` | Inspect Google connection, storage backend, and granted scopes |
+| `npm run auth google` | Authenticate with minimal identity scopes (`openid`, `email`, `profile`) |
+| `npm run auth youtube` | Authorize YouTube read-only scope (`youtube.readonly`) |
+| `npm run auth youtube -- --upload` | Authorize YouTube publishing scope (`youtube.upload`) |
+| `node dist/cli/index.js auth configure` | Set custom Google Cloud credentials in Developer Mode |
+| `node dist/cli/index.js auth logout` | Revoke tokens remotely and delete encrypted local credentials |
+| `npm run manager` | Start the local Manager web dashboard on port 9470 |
+| `npm run typecheck` | Run TypeScript type-checking without emitting files |
+| `npm run build` | Compile TypeScript source to `dist/` |
+| `npm test` | Run the complete Vitest test suite |
 
-## Reusable Google OAuth Authentication
+---
 
-AgentForge provides a persistent, OS-protected Google OAuth 2.0 connection system supporting both Zero-Configuration public distribution and local Developer Mode.
+## 10. Security & Threat Model
 
-### User Experience Modes
-- **Zero-Configuration Mode**: When AgentForge is bundled with an official registered Desktop Client ID (`AGENTFORGE_BUILTIN_CLIENT_ID`), ordinary users never need to configure client IDs or secrets. They simply click **Connect Google** in the Manager dashboard or run `agentforge auth google`.
-- **Developer Mode**: Self-hosters and developers can supply their own Google Cloud Desktop OAuth Client ID without editing source code, either using the interactive Manager modal, running `agentforge auth configure --client-id <id>`, or setting `$env:GOOGLE_CLIENT_ID`.
-- **Pending Registration**: When neither built-in publisher credentials nor developer credentials are configured, AgentForge transparently reports the exact publisher requirements needed to register the application with Google Cloud Console.
+- **No Remote Credential Storage:** Tokens never leave your local machine.
+- **Deep Redaction:** Tokens, secrets, and auth codes are automatically scrubbed from terminal outputs, API responses, and logs.
+- **Loopback Validation:** The OAuth loopback server binds to `127.0.0.1`, validates Host headers, and blocks untrusted cross-origin requests.
+- **Sandbox Limitations:** Custom Bridge Builder tests run in a child process sandbox. This provides execution validation, **not** an operating system hypervisor. Always review third-party code before granting production approval.
 
-### Credential Security
-- **No Plaintext JSON**: Refresh tokens are stored outside the repository directory (`%APPDATA%\AgentForge\auth\` on Windows) and protected using **Windows DPAPI** (`CurrentUser` scope) or encrypted storage.
-- **Redaction**: Access tokens, refresh tokens, client secrets, and authorization codes are automatically redacted from logs, CLI outputs, and MCP responses.
-- **Minimal Scopes**: AgentForge requests only minimal identity scopes (`openid`, `email`, `profile`) during initial login. Specific Google service bridges (YouTube, Drive, Calendar) request incremental scopes only when configured and approved.
-- **PKCE Verification**: Uses RFC 7636 SHA-256 PKCE challenges and CSRF state validation on a loopback redirect server with single-flight replay rejection and DNS rebinding protection.
+*To report security issues or review our cryptographic invariants, see [SECURITY.md](SECURITY.md) and [docs/SECURITY.md](docs/SECURITY.md).*
 
-### Quick Setup:
-1. **Manager UI**:
-   - Run `npm run manager` (http://localhost:9470).
-   - Click **Connect Google** in the header or in the Integrations card.
-2. **Terminal (Zero-Config)**:
-   ```bash
-   node dist/cli/index.js auth google
-   ```
-3. **Terminal (Developer Mode)**:
-   ```bash
-   node dist/cli/index.js auth configure --client-id "your-client-id.apps.googleusercontent.com"
-   node dist/cli/index.js auth google
-   ```
-4. **Revoke anytime via**:
-   ```bash
-   node dist/cli/index.js auth logout google
-   ```
+---
 
-## Manager Dashboard
+## 11. Troubleshooting & FAQ
 
-The Manager is a local web dashboard for viewing bridges, workflow runs, and approvals. It is **not** embedded inside Antigravity — it's a standalone local page.
+- **`invalid_client` (Google Error 401):** The client ID is a placeholder or not registered in Google Cloud Console. Run `auth configure --reset` or provide a valid Desktop client ID.
+- **`access_denied` (Google Error 403):** When the OAuth consent screen is in "Testing" mode, add your email address under **Test users** in Google Cloud Console.
+- **`Google hasn't verified this app`:** Click **Advanced** > **Go to AgentForge (unsafe)** to proceed during development.
+- **Port 9470 In Use:** Set `$env:PORT = "9480"` before running `npm run manager`.
 
-```bash
-npm run manager
-# Opens at http://localhost:9470
-```
+*For the complete resolution guide, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).*
 
-## Universal MCP Integration Engine
+---
 
-AgentForge transforms into a universal capability harness by connecting directly to external Model Context Protocol (MCP) servers and exposing their tools securely to Antigravity.
+## 12. Documentation Index
 
-### Supported Transports
+- [Architecture & Subsystems](docs/ARCHITECTURE.md)
+- [Installation & Antigravity Setup](docs/INSTALLATION.md)
+- [Security & Credential Isolation](docs/SECURITY.md)
+- [Bridges & External MCP Integrations](docs/INTEGRATIONS.md)
+- [Workflow Authoring & Approvals](docs/WORKFLOWS.md)
+- [Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
 
-- **Local stdio**: Spawns local child processes communicating over newline-delimited JSON-RPC 2.0. Protects against shell injection, manages process lifecycle, and catches process exits/crashes.
-- **Remote HTTP**: Connects to remote MCP endpoints via HTTP JSON-RPC with configurable request timeouts, abort controller signal handling, and header authentication.
+---
 
-### Unified Integration Catalog
+## 13. License
 
-AgentForge provides a unified integration catalog that categorizes all available capabilities:
-- **Built-in bridges** (`github`, `example-echo`)
-- **Custom user bridges** (`bridges/<name>/bridge.json`)
-- **External MCP servers** (stdio and HTTP)
-
-The catalog strictly separates:
-- **Declared capabilities**: What the manifest or configuration specifies.
-- **Verified executable capabilities**: Tools that are live, discovered, and bound to a running executor or connected server.
-
-### Exposing External MCP Tools to Antigravity
-
-AgentForge exposes 4 dedicated MCP tools in addition to its existing bridge management tools:
-
-1. `agentforge_list_catalog`: Returns the complete Unified Integration Catalog including summary metrics, item statuses, and declared vs. verified executable capabilities.
-2. `agentforge_list_mcp_servers`: Lists all configured external MCP servers, connection states, and discovered tools.
-3. `agentforge_manage_mcp_server`: Adds, connects, pings, disconnects, or removes external MCP servers.
-4. `agentforge_run_mcp_tool`: Safely executes a tool on a connected external MCP server with strict input schema validation, least-privilege permission checks, and mandatory approval gating.
-
-### Security & Permission Model
-
-- **Least-privilege permission inference**: Tools are analyzed by name and description and mapped to `read`, `local-write`, `external-write`, `publish`, or `destructive`.
-- **Approval gating**: Operations classified as `external-write`, `publish`, or `destructive` are blocked by default and require explicit confirmation (`confirmed: true`).
-- **Input schema validation**: Discovered tool schemas are validated against invocation arguments before passing requests to external servers.
-- **Secret redaction**: Environment variables and authentication headers matching tokens, keys, passwords, and secrets are masked as `[REDACTED]` in state queries, API endpoints, and Manager UI.
-
-## Manager Dashboard
-
-Run the Manager dashboard locally:
-
-```bash
-npm run manager
-```
-
-Or open `manager/index.html` directly in a browser.
-
-Features:
-- **Bridges Tab**: View installed bridges with capabilities and permission levels.
-- **Integrations Tab**: View Git, GitHub CLI/token, and Google OAuth 2.0 authentication status.
-- **MCP Servers Tab**: Add, connect, disconnect, ping, and invoke tools on external MCP servers.
-- **Unified Catalog Tab**: Inspect real-time metrics, filter by integration type, and compare declared vs. verified executable tools.
-- **Workflows Tab**: Workflow Control Center for launching predefined and custom workflows, tracking real-time step execution, reviewing approval checkpoints, and resuming or cancelling runs.
-- **Security Approvals Tab**: Immutable audit log of all operator approvals and rejections across bridges and external MCP tools with operator identity and audit notes.
-- **Create Bridge Modal**: Interactive form with schema validation and draft generator.
-
-## Creating a New Bridge
-
-1. Create a directory under `bridges/<your-bridge-name>/`
-2. Add a `bridge.json` following the schema (see `bridges/example/bridge.json`)
-3. Run `npm test` to validate the manifest
-4. Or use the Manager dashboard's "+ Create Bridge" button
-
-### Bridge Manifest Schema (v1.0)
-
-See [src/types.ts](src/types.ts) for the complete `BridgeManifest` interface.
-
-Required fields:
-- `schema`: Must be `"1.0"`
-- `name`: Lowercase kebab-case identifier
-- `displayName`: Human-readable name
-- `description`: What the bridge does
-- `version`: Semver version string
-- `capabilities`: Array of action definitions
-- `integrations`: Array of required tools/services (can be empty)
-- `auth`: Array of authentication requirements (can be empty)
-- `permissions`: Array of permission rules
-
-## GitHub Bridge
-
-The included GitHub bridge provides:
-
-| Action | Level | Description |
-|--------|-------|-------------|
-| `repo-info` | read | Repository information |
-| `branch-list` | read | List branches |
-| `status-check` | read | Working tree status |
-| `log-inspect` | read | Commit history |
-| `diff-review` | read | Compare changes |
-| `changelog-prepare` | local-write | Generate changelog |
-| `tag-create` | local-write | Create local tag |
-| `push-commits` | external-write | Push to remote |
-| `push-tags` | publish | Push tags |
-| `release-create` | publish | Create GitHub release |
-| `release-verify` | read | Verify release exists |
-| `branch-delete` | destructive | Delete branch |
-
-## YouTube Bridge
-
-The included YouTube bridge provides both read-only channel and video inspection, plus verified resumable video publishing with approval enforcement:
-
-| Action | Level | Requires Approval | Description |
-|--------|-------|-------------------|-------------|
-| `channel-inspect` | read | No | Inspect authenticated user's YouTube channel and statistics |
-| `channel-metadata` | read | No | Retrieve channel metadata by ID or handle |
-| `video-list` | read | No | List recent uploads or playlist items |
-| `video-upload` | publish | **Yes** | Resumable video upload with pre-flight checks, SHA-256 tamper verification, and post-upload verification |
-
-### YouTube Integration & OAuth Scope Model
-
-- **Read-Only Actions**: Require `https://www.googleapis.com/auth/youtube.readonly` (`agentforge auth youtube`).
-- **Publishing Actions**: Require `https://www.googleapis.com/auth/youtube.upload` (`agentforge auth youtube --upload`).
-- **Resumable Upload Protocol**: Implements Google's official resumable upload protocol with chunked transfers, automatic interruption recovery via HTTP 308 range queries, and remote duplicate upload prevention.
-- **Quota Awareness**: Video upload calls consume **1,600 quota units** (compared to 1 unit for read calls). Quota error messages provide clear diagnostic guidance and reset timing (midnight Pacific Time).
-- **Tamper Protection**: Approval is cryptographically bound to the video file's SHA-256 hash and size. If the file is altered on disk after operator approval, the execution engine halts immediately.
-
-## License
-
-MIT
+AgentForge is licensed under the [MIT License](LICENSE).
+Copyright &copy; 2026 Hamza Shaikh and AgentForge Contributors.

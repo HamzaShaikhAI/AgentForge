@@ -18,12 +18,14 @@
     "mcp_config.json",
     "publisher-client.example.json",
     "google-client.example.json",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "cli": "node dist/cli/index.js",
     "auth": "node dist/cli/index.js auth",
@@ -31,6 +33,14 @@
     "demo": "node dist/demo.js",
     "mcp": "node dist/mcp-server.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HamzaShaikhAI/AgentForge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HamzaShaikhAI/AgentForge/issues"
+  },
+  "homepage": "https://github.com/HamzaShaikhAI/AgentForge#readme",
   "keywords": ["antigravity", "plugin", "bridges", "automation"],
   "license": "MIT",
   "engines": { "node": ">=20" },
