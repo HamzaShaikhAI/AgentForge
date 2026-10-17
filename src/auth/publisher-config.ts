@@ -100,7 +100,7 @@ export function getPublisherConfig(options?: { customSearchDirs?: string[] }): P
   > = {
     appType: 'Desktop app',
     redirectUri: 'http://127.0.0.1:8910/callback',
-    supportContact: 'https://github.com/agentforge/agentforge/issues',
+    supportContact: 'https://github.com/HamzaShaikhAI/AgentForge/issues',
     defaultScopes: [
       'openid',
       'https://www.googleapis.com/auth/userinfo.email',

@@ -87,14 +87,14 @@ export class GoogleOAuthService {
       return this.clientConfigOverride;
     }
 
-    // 0. Built-in Publisher Client (Zero-Configuration Mode)
+    // 0. Legitimate Registered Built-in Publisher Client (Zero-Configuration Mode)
     const publisherConfig = getPublisherConfig();
-    if (publisherConfig.clientId) {
+    if (publisherConfig.clientId && publisherConfig.isRegistered) {
       return {
         clientId: publisherConfig.clientId.trim(),
         clientSecret: publisherConfig.clientSecret,
         source: 'builtin',
-        isRegisteredPublisherClient: publisherConfig.isRegistered,
+        isRegisteredPublisherClient: true,
       };
     }
 
@@ -182,6 +182,16 @@ export class GoogleOAuthService {
           // Ignore invalid file and continue search
         }
       }
+    }
+
+    // 3. Fallback to unregistered or placeholder publisher client (for diagnostics & Action Required state)
+    if (publisherConfig.clientId) {
+      return {
+        clientId: publisherConfig.clientId.trim(),
+        clientSecret: publisherConfig.clientSecret,
+        source: 'builtin',
+        isRegisteredPublisherClient: false,
+      };
     }
 
     return null;

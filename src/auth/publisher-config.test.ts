@@ -278,5 +278,30 @@ describe('Publisher OAuth Configuration & Production Readiness', () => {
 
       await rejectAssertion;
     });
+
+    it('contains verified supportContact URL pointing to repository issues', () => {
+      const config = getPublisherConfig();
+      expect(config.supportContact).toBe('https://github.com/HamzaShaikhAI/AgentForge/issues');
+    });
+
+    it('allows Developer Mode to take precedence when publisher configuration is a placeholder', async () => {
+      // Simulate bundled placeholder
+      process.env.AGENTFORGE_BUILTIN_CLIENT_ID = 'custom-manager-client.apps.googleusercontent.com';
+      // User sets legitimate Developer Mode client ID
+      process.env.GOOGLE_CLIENT_ID = '123456789012-realdeveloperclient.apps.googleusercontent.com';
+
+      const memStore = new MemoryCredentialStore();
+      const oauthService = new GoogleOAuthService({ credentialStore: memStore });
+
+      const config = await oauthService.getClientConfig();
+      expect(config?.source).toBe('env');
+      expect(config?.clientId).toBe('123456789012-realdeveloperclient.apps.googleusercontent.com');
+
+      const status = await oauthService.getStatus();
+      expect(status.authMode).toBe('developer-config');
+      expect(status.clientConfigured).toBe(true);
+      expect(status.clientValidation).toBe('valid');
+      expect(status.onboardingState).toBe('Ready to connect');
+    });
   });
 });
