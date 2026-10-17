@@ -1,8 +1,40 @@
+# Dependencies & build artifacts
 node_modules/
 dist/
+coverage/
 *.tgz
+*.tar.gz
+
+# Environment files & local secrets
 .env
 .env.*
-coverage/
+!.env.example
+*.local
+
+# Google OAuth & local credential files (never commit real credentials)
+publisher-client.json
+publisher.config.json
+google-client.json
+client_secret*.json
+credentials.json
+*.dat
+*.enc
+.agentforge/
+.credentials/
+
+# Safe example templates preserved
+!publisher-client.example.json
+!google-client.example.json
+
+# Runtime data & logs
+runs/
+*.log
+logs/
 data/
 !data/.gitkeep
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

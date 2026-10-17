@@ -1,0 +1,139 @@
+{
+  "schema": "1.0",
+  "name": "youtube",
+  "displayName": "YouTube",
+  "description": "YouTube Data API v3 integration: inspect channel, retrieve channel metadata, list uploaded videos, and upload videos using Google OAuth.",
+  "version": "0.2.0",
+  "author": "AgentForge",
+  "category": "media",
+  "capabilities": [
+    {
+      "action": "channel-inspect",
+      "description": "Inspect the authenticated user's YouTube channel, upload playlist ID, and subscriber/video statistics",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "hasChannel", "type": "boolean", "description": "Whether the Google account has a created YouTube channel" },
+        { "name": "channel", "type": "object", "description": "Channel details, statistics, and uploads playlist ID" },
+        { "name": "message", "type": "string", "description": "Execution status message" }
+      ]
+    },
+    {
+      "action": "channel-metadata",
+      "description": "Retrieve channel metadata for the authenticated user, or lookup a specific channel by ID or handle",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "channelId", "type": "string", "description": "Optional YouTube channel ID (e.g. UCxxxxxxxxxxxx)", "required": false },
+        { "name": "forHandle", "type": "string", "description": "Optional YouTube channel handle (e.g. @username)", "required": false }
+      ],
+      "outputs": [
+        { "name": "found", "type": "boolean", "description": "Whether the requested channel was found" },
+        { "name": "channel", "type": "object", "description": "Channel metadata" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "video-list",
+      "description": "List videos from the user's uploads playlist or a specified playlist with pagination",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "maxResults", "type": "number", "description": "Number of videos to return (1-50, default 10)", "required": false, "default": 10 },
+        { "name": "pageToken", "type": "string", "description": "Optional pagination token for next page", "required": false },
+        { "name": "playlistId", "type": "string", "description": "Optional playlist ID (defaults to user's uploads playlist)", "required": false }
+      ],
+      "outputs": [
+        { "name": "videos", "type": "array", "description": "List of video items" },
+        { "name": "totalResults", "type": "number", "description": "Total videos count in playlist" },
+        { "name": "nextPageToken", "type": "string", "description": "Token for next page if available" },
+        { "name": "prevPageToken", "type": "string", "description": "Token for previous page if available" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "video-upload",
+      "description": "Upload a video file to YouTube with title, description, tags, and visibility status. Requires explicit operator approval.",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "filePath", "type": "string", "description": "Absolute path to video file on local disk", "required": true },
+        { "name": "title", "type": "string", "description": "Video title (1-100 characters)", "required": true },
+        { "name": "description", "type": "string", "description": "Video description (up to 5000 characters)", "required": false },
+        { "name": "tags", "type": "array", "description": "List of video tags/keywords", "required": false },
+        { "name": "categoryId", "type": "string", "description": "Numeric YouTube category ID (default '22' People & Blogs)", "required": false, "default": "22" },
+        { "name": "privacyStatus", "type": "string", "description": "Visibility: 'private', 'unlisted', or 'public' (default 'private')", "required": false, "default": "private" },
+        { "name": "defaultLanguage", "type": "string", "description": "Default language of video metadata (e.g. 'en')", "required": false, "default": "en" },
+        { "name": "fileSha256", "type": "string", "description": "Expected SHA-256 hash of file for tamper verification", "required": false },
+        { "name": "fileSize", "type": "number", "description": "Expected file size in bytes for tamper verification", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether upload succeeded" },
+        { "name": "videoId", "type": "string", "description": "Assigned YouTube video ID" },
+        { "name": "videoUrl", "type": "string", "description": "Direct URL to the uploaded video" },
+        { "name": "title", "type": "string", "description": "Confirmed video title" },
+        { "name": "privacyStatus", "type": "string", "description": "Confirmed privacy status" },
+        { "name": "uploadStatus", "type": "string", "description": "Upload state (e.g. 'uploaded')" },
+        { "name": "processingStatus", "type": "string", "description": "YouTube processing state (e.g. 'processing', 'succeeded', 'failed')" },
+        { "name": "channelId", "type": "string", "description": "Channel ID video was uploaded to" },
+        { "name": "fileSha256", "type": "string", "description": "SHA-256 hash of uploaded file" },
+        { "name": "bytesUploaded", "type": "number", "description": "Total bytes transferred" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "name": "google-oauth",
+      "check": { "type": "env-var", "value": "GOOGLE_CLIENT_ID" },
+      "required": true,
+      "setupInstructions": "Connect via 'agentforge auth youtube' or the Manager dashboard to authorize YouTube scopes."
+    }
+  ],
+  "auth": [
+    {
+      "name": "google-oauth",
+      "type": "oauth",
+      "description": "Google OAuth 2.0 with https://www.googleapis.com/auth/youtube.readonly and https://www.googleapis.com/auth/youtube.upload scopes",
+      "required": true
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "channel-inspect",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "channel-metadata",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "video-list",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "video-upload",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "Uploading a video will publish content to your YouTube channel. Explicit operator approval is required."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["windows", "macos", "linux"]
+  },
+  "test": {
+    "smokeTest": "channel-inspect",
+    "verificationSteps": [
+      "Authenticate with 'agentforge auth youtube'",
+      "Run channel-inspect to verify channel metadata retrieval",
+      "Run video-list to verify uploads playlist listing",
+      "Authorize upload scope with 'agentforge auth youtube --upload'",
+      "Run video-upload with operator approval to publish video"
+    ]
+  },
+  "tags": ["youtube", "video", "media", "google", "publish"]
+}

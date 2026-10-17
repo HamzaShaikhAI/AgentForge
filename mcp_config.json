@@ -3,7 +3,7 @@
     "agentforge": {
       "command": "node",
       "args": [
-        "C:\\Users\\win10\\Documents\\AgentForge\\dist\\mcp-server.js"
+        "dist/mcp-server.js"
       ]
     }
   }

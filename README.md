@@ -34,7 +34,7 @@ npm test
 
 ```powershell
 # Windows (PowerShell, run as Administrator)
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.gemini\config\plugins\agentforge" -Target "C:\Users\win10\Documents\AgentForge"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.gemini\config\plugins\agentforge" -Target "$PWD"
 ```
 
 ```bash
@@ -123,11 +123,50 @@ Antigravity can combine bridge capabilities into multi-step workflows with:
 
 | Command | Description |
 |---------|-------------|
+| `npm run cli -- <args>` | Execute the unified AgentForge CLI |
+| `npm run auth -- status` | Check authentication mode and connection status |
+| `npm run auth -- google` | Run guided Google OAuth authorization (Zero-Config or Developer Mode) |
+| `npm run auth -- configure --client-id <id>` | Save Developer Mode credentials locally |
+| `npm run auth -- logout google` | Revoke and delete stored Google credentials |
+| `npm run auth -- help` | Display setup guide and publisher requirements |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm test` | Run all tests with Vitest |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run lint` | Type-check without emitting |
 | `npm run manager` | Start the Manager dashboard |
+
+## Reusable Google OAuth Authentication
+
+AgentForge provides a persistent, OS-protected Google OAuth 2.0 connection system supporting both Zero-Configuration public distribution and local Developer Mode.
+
+### User Experience Modes
+- **Zero-Configuration Mode**: When AgentForge is bundled with an official registered Desktop Client ID (`AGENTFORGE_BUILTIN_CLIENT_ID`), ordinary users never need to configure client IDs or secrets. They simply click **Connect Google** in the Manager dashboard or run `agentforge auth google`.
+- **Developer Mode**: Self-hosters and developers can supply their own Google Cloud Desktop OAuth Client ID without editing source code, either using the interactive Manager modal, running `agentforge auth configure --client-id <id>`, or setting `$env:GOOGLE_CLIENT_ID`.
+- **Pending Registration**: When neither built-in publisher credentials nor developer credentials are configured, AgentForge transparently reports the exact publisher requirements needed to register the application with Google Cloud Console.
+
+### Credential Security
+- **No Plaintext JSON**: Refresh tokens are stored outside the repository directory (`%APPDATA%\AgentForge\auth\` on Windows) and protected using **Windows DPAPI** (`CurrentUser` scope) or encrypted storage.
+- **Redaction**: Access tokens, refresh tokens, client secrets, and authorization codes are automatically redacted from logs, CLI outputs, and MCP responses.
+- **Minimal Scopes**: AgentForge requests only minimal identity scopes (`openid`, `email`, `profile`) during initial login. Specific Google service bridges (YouTube, Drive, Calendar) request incremental scopes only when configured and approved.
+- **PKCE Verification**: Uses RFC 7636 SHA-256 PKCE challenges and CSRF state validation on a loopback redirect server with single-flight replay rejection and DNS rebinding protection.
+
+### Quick Setup:
+1. **Manager UI**:
+   - Run `npm run manager` (http://localhost:9470).
+   - Click **Connect Google** in the header or in the Integrations card.
+2. **Terminal (Zero-Config)**:
+   ```bash
+   node dist/cli/index.js auth google
+   ```
+3. **Terminal (Developer Mode)**:
+   ```bash
+   node dist/cli/index.js auth configure --client-id "your-client-id.apps.googleusercontent.com"
+   node dist/cli/index.js auth google
+   ```
+4. **Revoke anytime via**:
+   ```bash
+   node dist/cli/index.js auth logout google
+   ```
 
 ## Manager Dashboard
 
@@ -138,13 +177,60 @@ npm run manager
 # Opens at http://localhost:9470
 ```
 
-Or open `manager/index.html` directly in a browser for a static view.
+## Universal MCP Integration Engine
+
+AgentForge transforms into a universal capability harness by connecting directly to external Model Context Protocol (MCP) servers and exposing their tools securely to Antigravity.
+
+### Supported Transports
+
+- **Local stdio**: Spawns local child processes communicating over newline-delimited JSON-RPC 2.0. Protects against shell injection, manages process lifecycle, and catches process exits/crashes.
+- **Remote HTTP**: Connects to remote MCP endpoints via HTTP JSON-RPC with configurable request timeouts, abort controller signal handling, and header authentication.
+
+### Unified Integration Catalog
+
+AgentForge provides a unified integration catalog that categorizes all available capabilities:
+- **Built-in bridges** (`github`, `example-echo`)
+- **Custom user bridges** (`bridges/<name>/bridge.json`)
+- **External MCP servers** (stdio and HTTP)
+
+The catalog strictly separates:
+- **Declared capabilities**: What the manifest or configuration specifies.
+- **Verified executable capabilities**: Tools that are live, discovered, and bound to a running executor or connected server.
+
+### Exposing External MCP Tools to Antigravity
+
+AgentForge exposes 4 dedicated MCP tools in addition to its existing bridge management tools:
+
+1. `agentforge_list_catalog`: Returns the complete Unified Integration Catalog including summary metrics, item statuses, and declared vs. verified executable capabilities.
+2. `agentforge_list_mcp_servers`: Lists all configured external MCP servers, connection states, and discovered tools.
+3. `agentforge_manage_mcp_server`: Adds, connects, pings, disconnects, or removes external MCP servers.
+4. `agentforge_run_mcp_tool`: Safely executes a tool on a connected external MCP server with strict input schema validation, least-privilege permission checks, and mandatory approval gating.
+
+### Security & Permission Model
+
+- **Least-privilege permission inference**: Tools are analyzed by name and description and mapped to `read`, `local-write`, `external-write`, `publish`, or `destructive`.
+- **Approval gating**: Operations classified as `external-write`, `publish`, or `destructive` are blocked by default and require explicit confirmation (`confirmed: true`).
+- **Input schema validation**: Discovered tool schemas are validated against invocation arguments before passing requests to external servers.
+- **Secret redaction**: Environment variables and authentication headers matching tokens, keys, passwords, and secrets are masked as `[REDACTED]` in state queries, API endpoints, and Manager UI.
+
+## Manager Dashboard
+
+Run the Manager dashboard locally:
+
+```bash
+npm run manager
+```
+
+Or open `manager/index.html` directly in a browser.
 
 Features:
-- View installed bridges with capabilities and permission levels
-- See integration requirements and auth status
-- Create new bridge scaffolds
-- Inspect workflow runs and approval history
+- **Bridges Tab**: View installed bridges with capabilities and permission levels.
+- **Integrations Tab**: View Git, GitHub CLI/token, and Google OAuth 2.0 authentication status.
+- **MCP Servers Tab**: Add, connect, disconnect, ping, and invoke tools on external MCP servers.
+- **Unified Catalog Tab**: Inspect real-time metrics, filter by integration type, and compare declared vs. verified executable tools.
+- **Workflows Tab**: Workflow Control Center for launching predefined and custom workflows, tracking real-time step execution, reviewing approval checkpoints, and resuming or cancelling runs.
+- **Security Approvals Tab**: Immutable audit log of all operator approvals and rejections across bridges and external MCP tools with operator identity and audit notes.
+- **Create Bridge Modal**: Interactive form with schema validation and draft generator.
 
 ## Creating a New Bridge
 
@@ -187,38 +273,24 @@ The included GitHub bridge provides:
 | `release-verify` | read | Verify release exists |
 | `branch-delete` | destructive | Delete branch |
 
-### GitHub Integration Requirements
+## YouTube Bridge
 
-- **Required:** `git` CLI
-- **Optional:** `gh` CLI (GitHub CLI) or `GITHUB_TOKEN` environment variable
-- API operations (releases) need either `gh auth` or `GITHUB_TOKEN`
+The included YouTube bridge provides both read-only channel and video inspection, plus verified resumable video publishing with approval enforcement:
 
-## Security
+| Action | Level | Requires Approval | Description |
+|--------|-------|-------------------|-------------|
+| `channel-inspect` | read | No | Inspect authenticated user's YouTube channel and statistics |
+| `channel-metadata` | read | No | Retrieve channel metadata by ID or handle |
+| `video-list` | read | No | List recent uploads or playlist items |
+| `video-upload` | publish | **Yes** | Resumable video upload with pre-flight checks, SHA-256 tamper verification, and post-upload verification |
 
-- API keys and tokens are **never stored in manifests or source code**
-- Credentials are referenced only by environment variable name
-- Publishing, sending, and destructive operations require explicit approval
-- Approval records log the decision, not the credentials used
-- All execution results report actual outcomes, never fabricated ones
+### YouTube Integration & OAuth Scope Model
 
-## Limitations & Next Steps
-
-### Current Limitations
-
-- GitHub bridge defines the manifest but does not include a runtime executor yet (Antigravity executes git commands directly via its existing tools)
-- Manager dashboard reads bridge manifests but doesn't show live integration status checks yet
-- No MCP server included yet (bridges use Antigravity's existing tool capabilities)
-- Workflow runs are in-memory only (no persistent storage yet)
-
-### Planned Next Steps
-
-1. **Bridge executors** — Runtime implementations for each bridge action
-2. **MCP server** — Expose AgentForge capabilities as MCP tools
-3. **Persistent state** — Save workflow runs and approvals to `data/`
-4. **Integration checker** — Verify CLI tools and env vars at startup
-5. **Video bridge scaffold** — Architecture for video generation workflows
-6. **Bridge templates** — Quick-start templates for common service types
-7. **GitHub CLI fallback** — Install `gh` CLI or use REST API directly
+- **Read-Only Actions**: Require `https://www.googleapis.com/auth/youtube.readonly` (`agentforge auth youtube`).
+- **Publishing Actions**: Require `https://www.googleapis.com/auth/youtube.upload` (`agentforge auth youtube --upload`).
+- **Resumable Upload Protocol**: Implements Google's official resumable upload protocol with chunked transfers, automatic interruption recovery via HTTP 308 range queries, and remote duplicate upload prevention.
+- **Quota Awareness**: Video upload calls consume **1,600 quota units** (compared to 1 unit for read calls). Quota error messages provide clear diagnostic guidance and reset timing (midnight Pacific Time).
+- **Tamper Protection**: Approval is cryptographically bound to the video file's SHA-256 hash and size. If the file is altered on disk after operator approval, the execution engine halts immediately.
 
 ## License
 

@@ -129,6 +129,11 @@ export class PermissionManager {
   }
 
   private matchInputs(expected: Record<string, unknown>, actual: Record<string, unknown>): boolean {
+    const expectedKeys = Object.keys(expected);
+    const actualKeys = Object.keys(actual);
+    if (expectedKeys.length !== actualKeys.length) {
+      return false;
+    }
     for (const [key, val] of Object.entries(expected)) {
       if (JSON.stringify(val) !== JSON.stringify(actual[key])) {
         return false;

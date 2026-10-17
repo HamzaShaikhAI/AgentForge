@@ -5,11 +5,28 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "agentforge": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "manager/index.html",
+    "bridges",
+    "rules",
+    "skills",
+    "plugin.json",
+    "mcp_config.json",
+    "publisher-client.example.json",
+    "google-client.example.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "cli": "node dist/cli/index.js",
+    "auth": "node dist/cli/index.js auth",
     "manager": "node dist/manager/serve.js",
     "demo": "node dist/demo.js",
     "mcp": "node dist/mcp-server.js"

@@ -1,0 +1,26 @@
+# Source and development files
+src/
+*.test.ts
+*.test.js
+*.test.d.ts
+tsconfig.json
+vitest.config.ts
+vitest.sandbox.config.ts
+
+# Credentials, tokens, and local configuration
+.env*
+publisher-client.json
+publisher.config.json
+google-client.json
+client_secret*.json
+credentials.json
+*.dat
+*.enc
+.agentforge/
+data/
+runs/
+logs/
+*.log
+
+# Scratch & development logs
+scratch/

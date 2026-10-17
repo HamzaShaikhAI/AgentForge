@@ -78,7 +78,7 @@ describe('BridgeRegistry', () => {
   });
 
   it('discovers bridges from the actual bridges directory', async () => {
-    const bridgesDir = resolve('c:/Users/win10/Documents/AgentForge/bridges');
+    const bridgesDir = resolve(process.cwd(), 'bridges');
     const fsRegistry = new BridgeRegistry(bridgesDir);
     const result = await fsRegistry.discover();
     expect(result.loaded.length).toBeGreaterThanOrEqual(2);

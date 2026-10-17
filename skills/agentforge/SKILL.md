@@ -119,6 +119,7 @@ AgentForge/
 ├── rules/AGENTS.md      # Always-on security rules
 ├── bridges/             # Bridge manifests (bridge.json per bridge)
 │   ├── github/
+│   ├── youtube/
 │   └── example/
 ├── src/                 # Core TypeScript library
 │   ├── bridge-validator.ts

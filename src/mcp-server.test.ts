@@ -1,11 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { resolve, join } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { AgentForgeMcpServer } from './mcp-server.js';
 
 describe('AgentForgeMcpServer (Antigravity MCP Integration)', () => {
   const root = resolve(import.meta.dirname, '..');
   const bridgesDir = join(root, 'bridges');
-  const server = new AgentForgeMcpServer(bridgesDir);
+  let tempAuthDir: string;
+  let server: AgentForgeMcpServer;
+
+  beforeAll(async () => {
+    tempAuthDir = await mkdtemp(join(tmpdir(), 'agentforge-mcp-server-test-'));
+    process.env.AGENTFORGE_CREDENTIALS_DIR = tempAuthDir;
+    server = new AgentForgeMcpServer(bridgesDir);
+  });
+
+  afterAll(async () => {
+    delete process.env.AGENTFORGE_CREDENTIALS_DIR;
+    try {
+      await rm(tempAuthDir, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+  });
 
   it('handles initialize request according to MCP protocol', async () => {
     const res = await server.handleMessage({
@@ -48,6 +66,10 @@ describe('AgentForgeMcpServer (Antigravity MCP Integration)', () => {
     expect(toolNames).toContain('agentforge_check_integrations');
     expect(toolNames).toContain('agentforge_run_action');
     expect(toolNames).toContain('agentforge_validate_manifest');
+    expect(toolNames).toContain('agentforge_list_catalog');
+    expect(toolNames).toContain('agentforge_list_mcp_servers');
+    expect(toolNames).toContain('agentforge_manage_mcp_server');
+    expect(toolNames).toContain('agentforge_run_mcp_tool');
   });
 
   it('calls agentforge_list_bridges tool', async () => {
@@ -83,6 +105,10 @@ describe('AgentForgeMcpServer (Antigravity MCP Integration)', () => {
 
     expect(parsed.git.available).toBe(true);
     expect(parsed.githubCli.available).toBe(false);
+    expect(parsed).toHaveProperty('google');
+    expect(parsed.google).toHaveProperty('status');
+    expect(parsed.google).toHaveProperty('clientConfigured');
+    expect(parsed.google).toHaveProperty('accountConnected');
   });
 
   it('executes real read action via agentforge_run_action', async () => {
@@ -161,5 +187,106 @@ describe('AgentForgeMcpServer (Antigravity MCP Integration)', () => {
     const content = (res?.result as { content: Array<{ type: string; text: string }> }).content;
     const parsed = JSON.parse(content[0].text);
     expect(parsed.valid).toBe(true);
+  });
+
+  it('calls agentforge_list_catalog tool returning unified catalog summary and items', async () => {
+    const res = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 9,
+      method: 'tools/call',
+      params: {
+        name: 'agentforge_list_catalog',
+        arguments: {},
+      },
+    });
+
+    const content = (res?.result as { content: Array<{ type: string; text: string }> }).content;
+    const parsed = JSON.parse(content[0].text);
+    expect(parsed).toHaveProperty('summary');
+    expect(parsed).toHaveProperty('items');
+    expect(parsed.summary.builtinBridges).toBeGreaterThanOrEqual(2);
+    expect(parsed.items.some((i: any) => i.name === 'github')).toBe(true);
+  });
+
+  it('manages external MCP servers via agentforge_manage_mcp_server and agentforge_list_mcp_servers', async () => {
+    // 1. Add server
+    const addRes = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 10,
+      method: 'tools/call',
+      params: {
+        name: 'agentforge_manage_mcp_server',
+        arguments: {
+          action: 'add',
+          config: {
+            id: 'mcp-server-test',
+            name: 'MCP Server Test',
+            transport: 'stdio',
+            command: 'node',
+            args: ['-e', 'process.exit(0)'],
+            autoConnect: false,
+          },
+        },
+      },
+    });
+    const addContent = (addRes?.result as { content: Array<{ type: string; text: string }> }).content;
+    const addParsed = JSON.parse(addContent[0].text);
+    expect(addParsed.status).toBe('success');
+    expect(addParsed.action).toBe('add');
+    expect(addParsed.server.id).toBe('mcp-server-test');
+
+    // 2. List servers
+    const listRes = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 11,
+      method: 'tools/call',
+      params: {
+        name: 'agentforge_list_mcp_servers',
+        arguments: {},
+      },
+    });
+    const listContent = (listRes?.result as { content: Array<{ type: string; text: string }> }).content;
+    const listParsed = JSON.parse(listContent[0].text);
+    expect(listParsed.count).toBeGreaterThanOrEqual(1);
+    expect(listParsed.servers.some((s: any) => s.id === 'mcp-server-test')).toBe(true);
+
+    // 3. Remove server
+    const removeRes = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 12,
+      method: 'tools/call',
+      params: {
+        name: 'agentforge_manage_mcp_server',
+        arguments: {
+          action: 'remove',
+          serverId: 'mcp-server-test',
+        },
+      },
+    });
+    const removeContent = (removeRes?.result as { content: Array<{ type: string; text: string }> }).content;
+    const removeParsed = JSON.parse(removeContent[0].text);
+    expect(removeParsed.status).toBe('success');
+    expect(removeParsed.action).toBe('remove');
+  });
+
+  it('fails safely when calling agentforge_run_mcp_tool on unknown or disconnected server', async () => {
+    const res = await server.handleMessage({
+      jsonrpc: '2.0',
+      id: 13,
+      method: 'tools/call',
+      params: {
+        name: 'agentforge_run_mcp_tool',
+        arguments: {
+          serverId: 'non-existent-server',
+          toolName: 'test-tool',
+          toolArguments: {},
+        },
+      },
+    });
+
+    const isError = (res?.result as { isError?: boolean }).isError;
+    expect(isError).toBe(true);
+    const content = (res?.result as { content: Array<{ type: string; text: string }> }).content;
+    expect(content[0].text).toContain('not found or server is not connected');
   });
 });

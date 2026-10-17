@@ -190,13 +190,25 @@ export interface WorkflowStep {
   retryable?: boolean;
   /** Max retry attempts */
   maxRetries?: number;
+  /** Optional delay in ms between retries */
+  retryDelayMs?: number;
+  /** Whether the action is explicitly established as idempotent and safe to retry even if publish/destructive */
+  safeToRetry?: boolean;
   /** Whether to stop workflow on failure */
   stopOnFailure?: boolean;
 }
 
 // ─── Execution ─────────────────────────────────────────────────────
 
-export type StepStatus = 'pending' | 'waiting-approval' | 'approved' | 'running' | 'completed' | 'failed' | 'skipped';
+export type StepStatus =
+  | 'pending'
+  | 'waiting-approval'
+  | 'approved'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'skipped'
+  | 'cancelled';
 
 export interface StepResult {
   stepId: string;
@@ -207,6 +219,34 @@ export interface StepResult {
   error?: string;
   approvedBy?: string;
   approvedAt?: string;
+  approvalRequestId?: string;
+  attempts?: number;
+  inputs?: Record<string, unknown>;
+}
+
+export type WorkflowRunStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'stopped'
+  | 'paused_for_approval'
+  | 'cancelled';
+
+export interface ApprovalCheckpoint {
+  approvalRequestId: string;
+  runId: string;
+  stepId: string;
+  provider: string;
+  action: string;
+  permissionLevel: PermissionLevel;
+  inputs: Record<string, unknown>;
+  approvalReason: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'rejected' | 'consumed';
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface WorkflowRun {
@@ -215,7 +255,7 @@ export interface WorkflowRun {
   /** Which workflow */
   workflowId: string;
   /** Current status */
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'stopped';
+  status: WorkflowRunStatus;
   /** Step results */
   steps: StepResult[];
   /** When the run started */
@@ -224,6 +264,8 @@ export interface WorkflowRun {
   completedAt?: string;
   /** Error if the run failed */
   error?: string;
+  /** Active approval checkpoint if paused for approval */
+  pendingApproval?: ApprovalCheckpoint;
 }
 
 // ─── Bridge Registry ───────────────────────────────────────────────

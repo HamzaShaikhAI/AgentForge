@@ -52,7 +52,8 @@
         </h1>
         <p class="text-sm mt-1" style="color: var(--muted)">Extensible Capability Harness for Antigravity</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
+        <div id="header-google-container"></div>
         <button class="btn btn-primary" onclick="showCreateBridge()">➕ Create Bridge</button>
         <button class="btn btn-outline" onclick="refreshBridges()">Refresh</button>
       </div>
@@ -61,8 +62,12 @@
     <!-- Tabs -->
     <nav class="flex gap-1 mb-6 border-b" style="border-color: var(--border)">
       <div class="tab active" onclick="switchTab('bridges')" data-tab="bridges">Bridges</div>
+      <div class="tab" onclick="switchTab('integrations')" data-tab="integrations">Integrations</div>
+      <div class="tab" onclick="switchTab('mcp-servers')" data-tab="mcp-servers">MCP Servers</div>
+      <div class="tab" onclick="switchTab('catalog')" data-tab="catalog">Unified Catalog</div>
       <div class="tab" onclick="switchTab('workflows')" data-tab="workflows">Workflow Runs</div>
       <div class="tab" onclick="switchTab('approvals')" data-tab="approvals">Approvals</div>
+      <div class="tab" onclick="switchTab('builder')" data-tab="builder">Bridge Builder</div>
       <div class="tab" onclick="switchTab('setup')" data-tab="setup">Setup Guide</div>
     </nav>
 
@@ -78,13 +83,132 @@
       </div>
     </div>
 
+    <!-- Integrations Tab -->
+    <div id="tab-integrations" style="display: none;">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-lg">System Integrations & Authentication</h3>
+          <button class="btn btn-outline" style="padding: 4px 10px; font-size: 13px;" onclick="loadIntegrations()">Refresh Status</button>
+        </div>
+        <div id="integrations-list" class="space-y-4">
+          <p style="color: var(--muted)">Loading integrations...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MCP Servers Tab -->
+    <div id="tab-mcp-servers" style="display: none;">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-lg flex items-center gap-2">🔌 External MCP Servers</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">Connect local stdio or remote HTTP MCP servers to discover and reuse their tools.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="showAddMcpModal()">➕ Add MCP Server</button>
+            <button class="btn btn-outline" onclick="loadMcpServers()">Refresh</button>
+          </div>
+        </div>
+        <div id="mcp-servers-loading" class="text-center py-8" style="color: var(--muted)">
+          Loading MCP servers...
+        </div>
+        <div id="mcp-servers-list" class="space-y-4" style="display: none;"></div>
+        <div id="mcp-servers-empty" class="text-center py-10" style="display: none; color: var(--muted)">
+          <p class="text-base mb-1">No external MCP servers configured</p>
+          <p class="text-xs mb-4">Add a local process command (stdio) or remote endpoint (HTTP) to discover tools</p>
+          <button class="btn btn-primary text-xs" onclick="showAddMcpModal()">➕ Configure Your First Server</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unified Integration Catalog Tab -->
+    <div id="tab-catalog" style="display: none;">
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-lg flex items-center gap-2">📚 Unified Integration Catalog</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">Comprehensive overview of declared vs verified executable capabilities across bridges and external MCP servers.</p>
+          </div>
+          <button class="btn btn-outline" onclick="loadCatalog()">Refresh Catalog</button>
+        </div>
+
+        <!-- Metrics cards -->
+        <div id="catalog-metrics" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+          <div class="p-3 rounded-lg text-center" style="background: var(--bg); border: 1px solid var(--border)">
+            <div id="metric-total" class="text-xl font-bold">0</div>
+            <div class="text-xs" style="color: var(--muted)">Integrations</div>
+          </div>
+          <div class="p-3 rounded-lg text-center" style="background: var(--bg); border: 1px solid var(--border)">
+            <div id="metric-builtin" class="text-xl font-bold text-blue-400">0</div>
+            <div class="text-xs" style="color: var(--muted)">Built-in Bridges</div>
+          </div>
+          <div class="p-3 rounded-lg text-center" style="background: var(--bg); border: 1px solid var(--border)">
+            <div id="metric-custom" class="text-xl font-bold text-emerald-400">0</div>
+            <div class="text-xs" style="color: var(--muted)">Custom Bridges</div>
+          </div>
+          <div class="p-3 rounded-lg text-center" style="background: var(--bg); border: 1px solid var(--border)">
+            <div id="metric-mcp" class="text-xl font-bold text-purple-400">0</div>
+            <div class="text-xs" style="color: var(--muted)">External MCP</div>
+          </div>
+          <div class="p-3 rounded-lg text-center" style="background: var(--bg); border: 1px solid var(--border)">
+            <div id="metric-exec" class="text-xl font-bold text-amber-400">0</div>
+            <div class="text-xs" style="color: var(--muted)">Executable Tools</div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="flex gap-2 mb-4">
+          <button class="btn btn-outline text-xs active-filter" id="filter-all" onclick="filterCatalog('all')">All Integrations</button>
+          <button class="btn btn-outline text-xs" id="filter-builtin" onclick="filterCatalog('builtin-bridge')">Built-in Bridges</button>
+          <button class="btn btn-outline text-xs" id="filter-custom" onclick="filterCatalog('custom-bridge')">Custom Bridges</button>
+          <button class="btn btn-outline text-xs" id="filter-mcp" onclick="filterCatalog('external-mcp')">External MCP</button>
+        </div>
+
+        <div id="catalog-list" class="space-y-4">
+          <p style="color: var(--muted)">Loading catalog...</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Workflows Tab -->
     <div id="tab-workflows" style="display: none;">
       <div class="card p-6">
-        <h3 class="font-semibold mb-4">Workflow Runs</h3>
-        <div id="workflow-runs" style="color: var(--muted)">
-          <p>No workflow runs recorded yet.</p>
-          <p class="text-sm mt-2">Workflows are executed through Antigravity. Results will appear here.</p>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h3 class="font-semibold text-lg flex items-center gap-2">⚡ Workflow Control Center</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">Orchestrate multi-tool workflows, inspect step execution, and review durable approval checkpoints.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="showRunWorkflowModal()">▶ Run Workflow</button>
+            <button class="btn btn-outline" onclick="loadWorkflowRuns()">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Pending Approval Top Alert (shown dynamically when runs need approval) -->
+        <div id="workflows-approval-alert" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24;" class="p-3 mb-4 rounded-lg text-xs flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🚨</span>
+            <span id="workflows-approval-alert-text" class="font-medium">1 workflow run is paused waiting for operator approval.</span>
+          </div>
+          <button class="btn btn-outline text-xs" style="padding: 3px 8px; border-color: #f59e0b; color: #fbbf24;" onclick="filterWorkflows('paused_for_approval')">Review Checkpoint</button>
+        </div>
+
+        <!-- Status Filter Bar -->
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="btn btn-primary text-xs" id="wf-filter-all" onclick="filterWorkflows('all')">All (<span id="wf-count-all">0</span>)</button>
+          <button class="btn btn-outline text-xs" id="wf-filter-paused" onclick="filterWorkflows('paused_for_approval')">Paused for Approval (<span id="wf-count-paused">0</span>)</button>
+          <button class="btn btn-outline text-xs" id="wf-filter-running" onclick="filterWorkflows('running')">Running (<span id="wf-count-running">0</span>)</button>
+          <button class="btn btn-outline text-xs" id="wf-filter-completed" onclick="filterWorkflows('completed')">Completed (<span id="wf-count-completed">0</span>)</button>
+          <button class="btn btn-outline text-xs" id="wf-filter-failed" onclick="filterWorkflows('failed')">Failed (<span id="wf-count-failed">0</span>)</button>
+          <button class="btn btn-outline text-xs" id="wf-filter-cancelled" onclick="filterWorkflows('cancelled')">Cancelled (<span id="wf-count-cancelled">0</span>)</button>
+        </div>
+
+        <div id="workflow-runs-loading" class="text-center py-8" style="color: var(--muted)">Loading workflow runs...</div>
+        <div id="workflow-runs-list" class="space-y-4" style="display: none;"></div>
+        <div id="workflow-runs-empty" class="text-center py-10" style="display: none; color: var(--muted)">
+          <p class="text-base mb-1">No workflow runs found</p>
+          <p class="text-xs mb-4">Start a predefined workflow or execute runs from Antigravity</p>
+          <button class="btn btn-primary text-xs" onclick="showRunWorkflowModal()">▶ Launch a Workflow</button>
         </div>
       </div>
     </div>
@@ -92,16 +216,126 @@
     <!-- Approvals Tab -->
     <div id="tab-approvals" style="display: none;">
       <div class="card p-6">
-        <h3 class="font-semibold mb-4">Approval History</h3>
-        <div id="approval-history" style="color: var(--muted)">
-          <p>No approvals recorded yet.</p>
-          <p class="text-sm mt-2">Approval records will appear here when operations requiring user consent are executed.</p>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-lg flex items-center gap-2">🛡️ Security Approval Audit History</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">Immutable record of all explicit user approvals granted across bridges and external MCP tools.</p>
+          </div>
+          <button class="btn btn-outline" onclick="loadApprovals()">Refresh</button>
         </div>
+        <div id="approvals-loading" class="text-center py-8" style="color: var(--muted)">Loading approval history...</div>
+        <div id="approvals-list" class="space-y-3" style="display: none;"></div>
+        <div id="approvals-empty" class="text-center py-10" style="display: none; color: var(--muted)">
+          <p class="text-base mb-1">No approvals recorded yet</p>
+          <p class="text-xs">Approvals will be logged here whenever operations requiring consent are authorized.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bridge Builder Tab -->
+    <div id="tab-builder" style="display: none;">
+      <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-lg flex items-center gap-2">🛠️ Custom Bridge Builder</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">Generate custom integrations from natural language requests with static security analysis, path traversal protection, and child process test sandboxing.</p>
+          </div>
+          <button class="btn btn-outline text-xs" onclick="loadBuilder()">Refresh Staged</button>
+        </div>
+
+        <form id="builder-generate-form" onsubmit="handleBuilderGenerate(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium mb-1">What capabilities do you need? <span style="color: var(--danger)">*</span></label>
+            <textarea id="builder-prompt-input" rows="3" class="w-full p-2.5 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="e.g., Create a bridge to inspect my GitHub repositories, or Manage local project workspace files safely..."></textarea>
+            <div class="flex gap-2 mt-2 flex-wrap text-xs">
+              <span style="color: var(--muted);">Suggestions:</span>
+              <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="setBuilderPrompt('Create a bridge to manage my local project workspace files and read directories')">Local Workspace Files</button>
+              <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="setBuilderPrompt('Create a bridge to inspect GitHub repositories, default branches, and issues')">GitHub Repositories</button>
+              <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="setBuilderPrompt('Inspect my YouTube channel videos and metrics')">YouTube Inspection (Builtin)</button>
+              <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="setBuilderPrompt('Build a custom external webhook submission service')">Custom Webhook Service</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium mb-1">Target Bridge Name <span style="color: var(--muted)">(optional slug)</span></label>
+              <input type="text" id="builder-target-name" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="e.g., workspace-fs">
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Preferred Transport / Mode</label>
+              <select id="builder-preferred-transport" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">
+                <option value="">Auto-analyze (MCP-First / Best Fit)</option>
+                <option value="custom">Force Custom Bridge Generation</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="builder-strategy-advisory" style="display: none;" class="p-3.5 rounded-lg text-xs border"></div>
+
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-outline" onclick="handleBuilderAnalyze()">🔍 Analyze Strategy (MCP-First)</button>
+            <button type="submit" id="btn-generate-bridge" class="btn btn-primary">⚡ Generate Staged Bridge</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Staged Bridges Section -->
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-base flex items-center gap-2">📦 Staged Bridges (Awaiting Review & Promotion)</h3>
+            <p class="text-xs mt-1" style="color: var(--muted)">All generated bridges remain safely in staging until validated, tested in isolated child processes, and approved by an operator.</p>
+          </div>
+        </div>
+
+        <div id="builder-staged-loading" class="text-center py-8" style="color: var(--muted)">Loading staged bridges...</div>
+        <div id="builder-staged-list" class="space-y-4" style="display: none;"></div>
+        <div id="builder-staged-empty" class="text-center py-10" style="display: none; color: var(--muted)">
+          <p class="text-base mb-1">No staged bridges found</p>
+          <p class="text-xs">Use the builder form above to generate and test your first custom integration.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operator Review & Register Modal -->
+    <div id="register-bridge-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 50;" onclick="if(event.target===this)hideRegisterBridgeModal()">
+      <div class="card p-6 max-w-lg mx-auto mt-20">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-base font-semibold flex items-center gap-2">
+            <span>🛡️</span> <span>Operator Review & Bridge Registration</span>
+          </h3>
+          <button onclick="hideRegisterBridgeModal()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+
+        <form id="register-bridge-form" onsubmit="confirmRegisterBridge(event)" class="space-y-4">
+          <input type="hidden" id="reg-bridge-id">
+          <div class="p-3 rounded-lg text-xs" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd;">
+            Promoting this bridge moves its manifest and executor into production (<code>bridges/</code>) and registers it immediately for runtime Antigravity workflows.
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium mb-1">Operator Identity <span style="color: var(--danger)">*</span></label>
+            <input type="text" id="reg-operator-identity" required class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="e.g., Security Lead Alice / DevOps Admin">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium mb-1">Review Notes / Audit Justification</label>
+            <textarea id="reg-review-notes" rows="2" class="w-full p-2.5 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="Verified test results, path traversal safeguards, and permission levels..."></textarea>
+          </div>
+
+          <div id="reg-bridge-alert" style="display: none;" class="p-3 rounded-lg text-xs"></div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn btn-outline" onclick="hideRegisterBridgeModal()">Cancel</button>
+            <button type="submit" id="btn-confirm-register" class="btn btn-primary" style="background: #059669;">✓ Approve & Promote to Production</button>
+          </div>
+        </form>
       </div>
     </div>
 
     <!-- Setup Guide Tab -->
     <div id="tab-setup" style="display: none;">
+
       <div class="card p-6">
         <h3 class="font-semibold mb-4">Setup Guide</h3>
         <div class="space-y-4" style="color: var(--muted)">
@@ -182,6 +416,256 @@
         </form>
       </div>
     </div>
+
+    <!-- Google Developer Config Modal -->
+    <div id="google-config-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;" onclick="if(event.target===this)hideGoogleConfig()">
+      <div class="card p-6 max-w-lg mx-auto mt-20" style="max-height: 85vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold flex items-center gap-2">⚙️ Google OAuth Developer Mode</h3>
+          <button onclick="hideGoogleConfig()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+        <p class="text-sm mb-3" style="color: var(--muted)">
+          Zero-configuration Google login is pending official publisher client registration with Google Cloud.
+          In Developer Mode, you can supply your own Google Cloud Desktop OAuth Client credentials.
+        </p>
+        <div class="p-3 rounded-lg text-xs mb-4" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); color: #93c5fd;">
+          <p class="font-semibold mb-1">ℹ Google Cloud Setup Checklist:</p>
+          <ul class="list-disc list-inside space-y-1 text-slate-300">
+            <li>Application Type: must be <strong>Desktop app</strong> (RFC 8252).</li>
+            <li>If Publishing Status is "Testing", add your account under <strong>Test users</strong>.</li>
+            <li>If Google displays "Google hasn't verified this app", click <em>Advanced</em> &gt; <em>Go to AgentForge (unsafe)</em>.</li>
+          </ul>
+        </div>
+        <form id="google-config-form" onsubmit="submitGoogleConfig(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">OAuth Client ID <span style="color: var(--danger)">*</span></label>
+            <input type="text" id="google-cfg-client-id" required class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxx.apps.googleusercontent.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Client Secret <span style="color: var(--muted)">(Optional for Desktop / Public Clients)</span></label>
+            <input type="password" id="google-cfg-client-secret" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx">
+          </div>
+          <div id="google-cfg-alert" style="display: none;" class="p-3 rounded-lg text-xs"></div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn btn-outline" onclick="hideGoogleConfig()">Cancel</button>
+            <button type="submit" id="btn-save-google-cfg" class="btn btn-primary">Save & Enable</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add MCP Server Modal -->
+    <div id="add-mcp-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;" onclick="if(event.target===this)hideAddMcpModal()">
+      <div class="card p-6 max-w-xl mx-auto mt-16" style="max-height: 85vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold flex items-center gap-2">🔌 Add External MCP Server</h3>
+          <button onclick="hideAddMcpModal()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+        <form id="add-mcp-form" onsubmit="submitAddMcpServer(event)" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium mb-1">Server ID (kebab-case) <span style="color: var(--danger)">*</span></label>
+              <input type="text" id="mcp-cfg-id" required pattern="[a-zA-Z0-9_-]+" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="filesystem-server">
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Display Name <span style="color: var(--danger)">*</span></label>
+              <input type="text" id="mcp-cfg-name" required class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="Filesystem Server">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1">Description</label>
+            <input type="text" id="mcp-cfg-desc" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="Local filesystem MCP tools">
+          </div>
+          <div>
+            <label class="block text-xs font-medium mb-1">Transport Protocol</label>
+            <select id="mcp-cfg-transport" onchange="toggleMcpTransportFields()" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">
+              <option value="stdio" selected>Local Child Process (stdio)</option>
+              <option value="http">Remote HTTP Endpoint</option>
+            </select>
+          </div>
+
+          <!-- Stdio Fields -->
+          <div id="mcp-stdio-fields" class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium mb-1">Command <span style="color: var(--danger)">*</span></label>
+              <input type="text" id="mcp-cfg-command" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="npx">
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Arguments (space separated or JSON array)</label>
+              <input type="text" id="mcp-cfg-args" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="-y @modelcontextprotocol/server-filesystem C:\workspace">
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Environment Variables <span style="color: var(--muted)">(KEY=VALUE per line, secrets will be redacted)</span></label>
+              <textarea id="mcp-cfg-env" rows="2" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="API_KEY=xyz"></textarea>
+            </div>
+          </div>
+
+          <!-- HTTP Fields -->
+          <div id="mcp-http-fields" class="space-y-3" style="display: none;">
+            <div>
+              <label class="block text-xs font-medium mb-1">Endpoint URL <span style="color: var(--danger)">*</span></label>
+              <input type="url" id="mcp-cfg-url" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="http://localhost:8080/mcp">
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Headers <span style="color: var(--muted)">(Header: Value per line)</span></label>
+              <textarea id="mcp-cfg-headers" rows="2" class="w-full px-3 py-2 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="Authorization: Bearer my-token"></textarea>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="mcp-cfg-autoconnect" checked class="rounded">
+            <label for="mcp-cfg-autoconnect" class="text-xs">Connect immediately after saving</label>
+          </div>
+
+          <div id="mcp-add-alert" style="display: none;" class="p-3 rounded-lg text-xs"></div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn btn-outline" onclick="hideAddMcpModal()">Cancel</button>
+            <button type="submit" id="btn-save-mcp" class="btn btn-primary">Save & Connect</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Run MCP Tool Modal -->
+    <div id="run-tool-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;" onclick="if(event.target===this)hideRunToolModal()">
+      <div class="card p-6 max-w-xl mx-auto mt-16" style="max-height: 85vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h3 class="text-base font-semibold flex items-center gap-2">
+              <span>⚡</span> <span id="run-tool-title">Invoke Tool</span>
+            </h3>
+            <p id="run-tool-server-badge" class="text-xs mt-0.5" style="color: var(--muted)"></p>
+          </div>
+          <button onclick="hideRunToolModal()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+
+        <div id="run-tool-permission-notice" class="p-2.5 rounded-lg text-xs mb-3 flex items-center justify-between"></div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium mb-1">Input Parameters (JSON Object)</label>
+            <textarea id="run-tool-inputs" rows="4" class="w-full p-2.5 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);">{}</textarea>
+          </div>
+
+          <div>
+            <details>
+              <summary class="text-xs font-medium cursor-pointer" style="color: var(--accent)">▶ View Discovered Input Schema</summary>
+              <pre id="run-tool-schema-view" class="p-2 mt-1 rounded text-xs font-mono overflow-x-auto" style="background: var(--bg); border: 1px solid var(--border); max-height: 140px;"></pre>
+            </details>
+          </div>
+
+          <div id="run-tool-result-container" style="display: none;">
+            <label class="block text-xs font-medium mb-1">Execution Output</label>
+            <pre id="run-tool-output" class="p-3 rounded-lg text-xs font-mono overflow-x-auto" style="background: var(--bg); border: 1px solid var(--border); max-height: 200px;"></pre>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn btn-outline" onclick="hideRunToolModal()">Close</button>
+            <button type="button" id="btn-execute-tool" class="btn btn-primary" onclick="executeCurrentTool()">Execute Tool</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Approval Checkpoint Modal -->
+    <div id="workflow-approval-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 50;" onclick="if(event.target===this)hideApprovalModal()">
+      <div class="card p-6 max-w-2xl mx-auto mt-14" style="max-height: 88vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-base font-semibold flex items-center gap-2">
+              <span>🛡️</span> <span>Review Pending Approval Checkpoint</span>
+            </h3>
+            <p id="modal-appr-meta" class="text-xs mt-0.5" style="color: var(--muted)"></p>
+          </div>
+          <button onclick="hideApprovalModal()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+
+        <!-- Consequence Alert Box -->
+        <div id="modal-appr-consequences-box" class="p-3 rounded-lg text-xs mb-4" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+          <div class="flex items-start gap-2">
+            <span class="text-base mt-0.5">⚠️</span>
+            <div>
+              <p class="font-semibold" id="modal-appr-consequences-title">Potential External Impact</p>
+              <p class="mt-0.5 text-slate-300" id="modal-appr-consequences-desc"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="p-2.5 rounded" style="background: var(--bg); border: 1px solid var(--border)">
+              <div style="color: var(--muted)">Provider / Target:</div>
+              <div id="modal-appr-provider" class="font-mono font-medium mt-0.5"></div>
+            </div>
+            <div class="p-2.5 rounded" style="background: var(--bg); border: 1px solid var(--border)">
+              <div style="color: var(--muted)">Action / Tool:</div>
+              <div id="modal-appr-action" class="font-mono font-medium mt-0.5"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium mb-1">Exact Bound Input Payload (Read-Only)</label>
+            <pre id="modal-appr-inputs" class="p-3 rounded-lg text-xs font-mono overflow-x-auto" style="background: var(--bg); border: 1px solid var(--border); max-height: 160px;"></pre>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium mb-1">Operator Identity <span style="color: var(--danger)">*</span></label>
+              <input type="text" id="modal-appr-operator" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" value="Local Operator" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1">Approval Reason / Audit Note</label>
+              <input type="text" id="modal-appr-reason" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" placeholder="e.g. Code changes and diff inspected">
+            </div>
+          </div>
+
+          <div id="modal-appr-error" style="display: none; background: rgba(239, 68, 68, 0.15); color: #f87171;" class="p-2.5 rounded text-xs"></div>
+
+          <div class="flex justify-between items-center pt-3 border-t" style="border-color: var(--border)">
+            <button type="button" class="btn btn-outline text-xs" style="border-color: var(--danger); color: #f87171;" onclick="submitApprovalDecision(false)">❌ Reject Action</button>
+            <div class="flex gap-2">
+              <button type="button" class="btn btn-outline text-xs" onclick="hideApprovalModal()">Cancel</button>
+              <button type="button" id="btn-approve-resume" class="btn btn-primary text-xs" onclick="submitApprovalDecision(true)">✅ Approve & Resume</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Workflow Modal -->
+    <div id="run-workflow-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 50;" onclick="if(event.target===this)hideRunWorkflowModal()">
+      <div class="card p-6 max-w-xl mx-auto mt-16" style="max-height: 85vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-base font-semibold flex items-center gap-2">
+            <span>▶</span> <span>Launch Workflow Run</span>
+          </h3>
+          <button onclick="hideRunWorkflowModal()" class="btn btn-outline" style="padding: 4px 8px;">✕</button>
+        </div>
+
+        <form id="launch-workflow-form" onsubmit="launchWorkflowFromModal(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium mb-1">Choose Predefined Workflow</label>
+            <select id="run-wf-select" class="w-full px-3 py-2 rounded-lg text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);" onchange="handleWorkflowSelectChange()">
+              <option value="custom">-- Custom Workflow Definition (JSON) --</option>
+            </select>
+            <p id="run-wf-desc" class="text-xs mt-1" style="color: var(--muted)"></p>
+          </div>
+
+          <div id="run-wf-custom-container">
+            <label class="block text-xs font-medium mb-1">Workflow Definition (JSON)</label>
+            <textarea id="run-wf-custom-json" rows="8" class="w-full p-2.5 rounded-lg font-mono text-xs" style="background: var(--bg); border: 1px solid var(--border); color: var(--text);"></textarea>
+          </div>
+
+          <div id="run-wf-alert" style="display: none;" class="p-3 rounded-lg text-xs"></div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn btn-outline" onclick="hideRunWorkflowModal()">Cancel</button>
+            <button type="submit" id="btn-submit-run-wf" class="btn btn-primary">Start Execution</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -193,6 +677,14 @@
       document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
       document.getElementById('tab-' + name).style.display = '';
       document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+
+      if (name === 'mcp-servers') loadMcpServers();
+      if (name === 'catalog') loadCatalog();
+      if (name === 'integrations') loadIntegrations();
+      if (name === 'bridges') loadBridges();
+      if (name === 'workflows') loadWorkflowRuns();
+      if (name === 'approvals') loadApprovals();
+      if (name === 'builder') loadBuilder();
     }
 
     // Bridge loading
@@ -397,8 +889,1858 @@
       });
     }
 
+    let isConnectingGoogle = false;
+    let currentGoogleStatus = null;
+
+    function renderHeaderGoogleButton(googleStatus) {
+      const container = document.getElementById('header-google-container');
+      if (!container) return;
+
+      if (isConnectingGoogle) {
+        container.innerHTML = `
+          <button class="btn btn-outline flex items-center gap-2 text-sm" disabled style="border-color: #f59e0b; color: #fbbf24;">
+            <span class="animate-spin">⏳</span> Connecting Google...
+          </button>
+        `;
+      } else if (googleStatus && googleStatus.onboardingState === 'Connected') {
+        container.innerHTML = `
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm" style="background: #1a3329; border: 1px solid #22c55e; color: #4ade80;">
+            <span>✓ Google: <strong>${escapeHtml(googleStatus.connectedAccount || 'Connected')}</strong></span>
+            <button onclick="handleGoogleDisconnect()" class="text-xs underline ml-1 hover:text-red-400" title="Disconnect Google Account">Disconnect</button>
+          </div>
+        `;
+      } else if (googleStatus && googleStatus.onboardingState === 'Action required') {
+        container.innerHTML = `
+          <button class="btn btn-outline flex items-center gap-2 text-sm" style="border-color: #ef4444; color: #f87171;" onclick="handleGoogleConnect()">
+            <span>⚠️</span> Action Required
+          </button>
+        `;
+      } else if (googleStatus && googleStatus.onboardingState === 'Ready to connect') {
+        container.innerHTML = `
+          <button class="btn btn-primary flex items-center gap-2 text-sm" onclick="handleGoogleConnect()">
+            <span>🔑</span> Connect Google
+          </button>
+        `;
+      } else {
+        // Not configured / Awaiting publisher setup
+        container.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="badge" style="background: #334155; color: #94a3b8; font-size: 11px; padding: 4px 8px;">Awaiting Publisher Setup</span>
+            <button class="btn btn-outline text-xs" style="padding: 4px 8px;" onclick="showGoogleConfig()" title="Advanced: Configure custom Google Cloud credentials">Developer Mode</button>
+          </div>
+        `;
+      }
+    }
+
+    function showGoogleConfig() {
+      const modal = document.getElementById('google-config-modal');
+      const alertBox = document.getElementById('google-cfg-alert');
+      if (alertBox) alertBox.style.display = 'none';
+      if (modal) modal.style.display = '';
+    }
+
+    function hideGoogleConfig() {
+      const modal = document.getElementById('google-config-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function submitGoogleConfig(event) {
+      event.preventDefault();
+      const clientId = document.getElementById('google-cfg-client-id').value.trim();
+      const clientSecret = document.getElementById('google-cfg-client-secret').value.trim();
+      const alertBox = document.getElementById('google-cfg-alert');
+      const submitBtn = document.getElementById('btn-save-google-cfg');
+
+      if (!clientId) {
+        if (alertBox) {
+          alertBox.style.display = '';
+          alertBox.style.background = '#3b1a1a';
+          alertBox.style.color = '#f87171';
+          alertBox.textContent = 'Client ID is required';
+        }
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      try {
+        const resp = await fetch('/api/auth/google/configure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId, clientSecret: clientSecret || undefined }),
+        });
+
+        const result = await resp.json();
+        if (!resp.ok || !result.success) {
+          throw new Error(result.error || 'Failed to save configuration');
+        }
+
+        hideGoogleConfig();
+        await loadIntegrations();
+        alert('Developer credentials saved! Click "Connect Google" to authorize.');
+      } catch (err) {
+        if (alertBox) {
+          alertBox.style.display = '';
+          alertBox.style.background = '#3b1a1a';
+          alertBox.style.color = '#f87171';
+          alertBox.textContent = err.message;
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Enable';
+      }
+    }
+
+    async function handleGoogleConnect() {
+      if (isConnectingGoogle) return;
+
+      if (!currentGoogleStatus || currentGoogleStatus.onboardingState === 'Not configured') {
+        alert('Zero-configuration Google login is pending official publisher client registration.\n\nTo use Google integrations in Developer Mode, configure your own Google Cloud Desktop app credentials.');
+        showGoogleConfig();
+        return;
+      }
+
+      if (currentGoogleStatus.onboardingState === 'Action required' && (currentGoogleStatus.clientValidation === 'placeholder' || currentGoogleStatus.clientValidation === 'malformed')) {
+        showGoogleConfig();
+        return;
+      }
+
+      isConnectingGoogle = true;
+      renderHeaderGoogleButton(currentGoogleStatus);
+      await loadIntegrations();
+
+      try {
+        const resp = await fetch('/api/auth/google/connect', { method: 'POST' });
+        const result = await resp.json();
+
+        if (!resp.ok || !result.success) {
+          throw new Error(result.error || result.message || 'Authentication failed');
+        }
+
+        alert(`Google Authentication Successful! Connected as: ${result.account}`);
+      } catch (err) {
+        alert(`Google Authentication error: ${err.message}`);
+      } finally {
+        isConnectingGoogle = false;
+        await loadIntegrations();
+      }
+    }
+
+    async function handleGoogleDisconnect() {
+      if (!confirm('Disconnect Google account and remove stored credentials from OS secure storage?')) {
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/auth/google/logout', { method: 'POST' });
+        const result = await resp.json();
+        if (resp.ok && result.success) {
+          alert('Google account disconnected successfully.');
+        } else {
+          alert(`Logout notice: ${result.error || 'Done'}`);
+        }
+      } catch (err) {
+        alert(`Failed to disconnect: ${err.message}`);
+      } finally {
+        await loadIntegrations();
+      }
+    }
+
+    let isConnectingYouTube = false;
+    async function handleYouTubeConnect() {
+      if (isConnectingYouTube) return;
+
+      if (!currentGoogleStatus || currentGoogleStatus.onboardingState === 'Not configured') {
+        alert('Zero-configuration Google login is pending official publisher client registration.\n\nTo use YouTube in Developer Mode, configure your own Google Cloud Desktop app credentials.');
+        showGoogleConfig();
+        return;
+      }
+
+      if (currentGoogleStatus.onboardingState === 'Action required' && (currentGoogleStatus.clientValidation === 'placeholder' || currentGoogleStatus.clientValidation === 'malformed')) {
+        showGoogleConfig();
+        return;
+      }
+
+      isConnectingYouTube = true;
+      await loadIntegrations();
+
+      try {
+        const resp = await fetch('/api/auth/youtube/connect', { method: 'POST' });
+        const result = await resp.json();
+
+        if (!resp.ok || !result.success) {
+          throw new Error(result.error || result.message || 'YouTube authentication failed');
+        }
+
+        alert(`YouTube Authorization Successful! Granted read-only scope for ${result.account}`);
+      } catch (err) {
+        alert(`YouTube Authorization error: ${err.message}`);
+      } finally {
+        isConnectingYouTube = false;
+        await loadIntegrations();
+      }
+    }
+
+    async function handleYouTubeUploadConnect() {
+      if (isConnectingYouTube) return;
+
+      if (!currentGoogleStatus || currentGoogleStatus.onboardingState === 'Not configured') {
+        alert('Zero-configuration Google login is pending official publisher client registration.\n\nTo use YouTube in Developer Mode, configure your own Google Cloud Desktop app credentials.');
+        showGoogleConfig();
+        return;
+      }
+
+      if (currentGoogleStatus.onboardingState === 'Action required' && (currentGoogleStatus.clientValidation === 'placeholder' || currentGoogleStatus.clientValidation === 'malformed')) {
+        showGoogleConfig();
+        return;
+      }
+
+      isConnectingYouTube = true;
+      await loadIntegrations();
+
+      try {
+        const resp = await fetch('/api/auth/youtube/connect-upload', { method: 'POST' });
+        const result = await resp.json();
+
+        if (!resp.ok || !result.success) {
+          throw new Error(result.error || result.message || 'YouTube upload authorization failed');
+        }
+
+        alert(`YouTube Upload Authorization Successful! Granted video upload scope for ${result.account}`);
+      } catch (err) {
+        alert(`YouTube Upload Authorization error: ${err.message}`);
+      } finally {
+        isConnectingYouTube = false;
+        await loadIntegrations();
+      }
+    }
+
+    async function loadIntegrations() {
+      const container = document.getElementById('integrations-list');
+      try {
+        const resp = await fetch('/api/integrations');
+        if (!resp.ok) throw new Error('API unavailable');
+        const data = await resp.json();
+
+        const gitDot = data.git && data.git.available ? 'status-available' : 'status-missing';
+        const ghCliDot = data.githubCli && data.githubCli.available ? 'status-available' : 'status-optional';
+        const ghTokenDot = data.githubToken && data.githubToken.configured ? 'status-available' : 'status-optional';
+        
+        const googleStatus = data.google || {};
+        currentGoogleStatus = googleStatus;
+        renderHeaderGoogleButton(googleStatus);
+
+        let googleDot = 'status-missing';
+        if (googleStatus.onboardingState === 'Connected') googleDot = 'status-available';
+        else if (googleStatus.onboardingState === 'Ready to connect') googleDot = 'status-optional';
+        else if (googleStatus.onboardingState === 'Action required') googleDot = 'status-missing';
+        else googleDot = 'status-missing';
+
+        let modeBadge = '<span class="badge" style="background: #334155; color: #94a3b8;">Awaiting Publisher Configuration</span>';
+        if (googleStatus.onboardingState === 'Connected') {
+          modeBadge = '<span class="badge badge-publish">Connected</span>';
+        } else if (googleStatus.onboardingState === 'Ready to connect') {
+          modeBadge = googleStatus.authMode === 'zero-config'
+            ? '<span class="badge badge-publish">Ready to Connect (Zero-Config)</span>'
+            : '<span class="badge badge-read">Ready to Connect (Developer)</span>';
+        } else if (googleStatus.onboardingState === 'Action required') {
+          modeBadge = '<span class="badge badge-destructive">Action Required</span>';
+        } else if (googleStatus.authMode === 'developer-config') {
+          modeBadge = '<span class="badge badge-read">Developer Mode</span>';
+        }
+
+        let googleActionsHtml = '';
+        if (isConnectingGoogle) {
+          googleActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <button class="btn btn-outline text-xs flex items-center gap-1" disabled style="border-color: #f59e0b; color: #fbbf24;">
+                <span class="animate-spin">⏳</span> Connecting Google (Approve in Browser)...
+              </button>
+            </div>
+          `;
+        } else if (googleStatus.onboardingState === 'Connected') {
+          googleActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <button class="btn btn-outline text-xs" style="border-color: var(--danger); color: #f87171;" onclick="handleGoogleDisconnect()">
+                ✕ Disconnect Account
+              </button>
+              <button class="btn btn-outline text-xs" onclick="handleGoogleConnect()">
+                🔄 Switch / Re-authenticate
+              </button>
+            </div>
+          `;
+        } else if (googleStatus.onboardingState === 'Action required') {
+          const isClientIssue = googleStatus.clientValidation === 'placeholder' || googleStatus.clientValidation === 'malformed';
+          googleActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <button class="btn btn-primary text-xs flex items-center gap-1" onclick="${isClientIssue ? 'showGoogleConfig()' : 'handleGoogleConnect()'}">
+                <span>${isClientIssue ? '⚙️ Fix Client ID' : '🔄 Re-authenticate Google'}</span>
+              </button>
+              <button class="btn btn-outline text-xs" style="border-color: var(--danger); color: #f87171;" onclick="handleGoogleDisconnect()">
+                ✕ Reset / Clear
+              </button>
+            </div>
+            <div class="mt-2 text-xs text-red-400">
+              ⚠️ ${escapeHtml(googleStatus.actionRequiredReason || googleStatus.clientValidationError || 'Re-authentication or configuration fix required')}
+            </div>
+          `;
+        } else if (googleStatus.onboardingState === 'Ready to connect') {
+          googleActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <button class="btn btn-primary text-xs flex items-center gap-1" onclick="handleGoogleConnect()">
+                <span>🔑</span> Connect Google
+              </button>
+              <button class="btn btn-outline text-xs" onclick="showGoogleConfig()" title="Configure custom OAuth client">
+                ⚙️ Developer Settings
+              </button>
+            </div>
+          `;
+        } else {
+          // Not configured (Awaiting publisher configuration)
+          googleActionsHtml = `
+            <div class="mt-3 p-3 rounded-lg text-xs" style="background: #1e1e2f; border: 1px solid #334155;">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-semibold text-slate-200">ℹ Zero-Configuration Google Sign-In</span>
+                <span class="badge" style="background: #334155; color: #94a3b8;">Pending Registration</span>
+              </div>
+              <p style="color: var(--muted);" class="mb-2">
+                AgentForge is designed for zero-configuration sign-in. Once the official desktop client is registered with Google Cloud, you will be able to connect in one click without developer console setup.
+              </p>
+              <div class="pt-2 border-t border-slate-700/50 flex items-center gap-2">
+                <button class="btn btn-outline text-xs" onclick="showGoogleConfig()">
+                  🛠️ Advanced: Developer Mode (Custom OAuth Client)
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        const youtubeStatus = data.youtube || {};
+        let ytDot = 'status-missing';
+        if (youtubeStatus.hasUploadScope) ytDot = 'status-available';
+        else if (youtubeStatus.available) ytDot = 'status-available';
+        else if (youtubeStatus.connected) ytDot = 'status-optional';
+
+        let youtubeActionsHtml = '';
+        if (isConnectingYouTube) {
+          youtubeActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <button class="btn btn-outline text-xs flex items-center gap-1" disabled style="border-color: #f59e0b; color: #fbbf24;">
+                <span class="animate-spin">⏳</span> Connecting YouTube (Approve in Browser)...
+              </button>
+            </div>
+          `;
+        } else if (youtubeStatus.hasUploadScope) {
+          youtubeActionsHtml = `
+            <div class="mt-3 flex items-center gap-2">
+              <span class="text-xs text-emerald-400 font-medium">✓ Read & Publishing Permissions Active</span>
+              <button class="btn btn-outline text-xs ml-auto" onclick="handleYouTubeUploadConnect()">
+                🔄 Re-authorize Upload
+              </button>
+            </div>
+          `;
+        } else if (youtubeStatus.available) {
+          youtubeActionsHtml = `
+            <div class="mt-3 flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-emerald-400 font-medium">✓ Read-Only Active</span>
+              <button class="btn btn-primary text-xs flex items-center gap-1" onclick="handleYouTubeUploadConnect()">
+                <span>🚀</span> Authorize Video Publishing (Upload)
+              </button>
+              <button class="btn btn-outline text-xs ml-auto" onclick="handleYouTubeConnect()">
+                🔄 Re-authorize Read-Only
+              </button>
+            </div>
+          `;
+        } else if (youtubeStatus.connected && !youtubeStatus.hasScope) {
+          youtubeActionsHtml = `
+            <div class="mt-3 flex items-center gap-2 flex-wrap">
+              <button class="btn btn-primary text-xs flex items-center gap-1" onclick="handleYouTubeConnect()">
+                <span>▶</span> Grant YouTube Read-Only Scope
+              </button>
+              <button class="btn btn-outline text-xs flex items-center gap-1" onclick="handleYouTubeUploadConnect()">
+                <span>🚀</span> Grant Upload & Publish Scope
+              </button>
+            </div>
+          `;
+        } else {
+          youtubeActionsHtml = `
+            <div class="mt-3 flex items-center gap-2 flex-wrap">
+              <button class="btn btn-primary text-xs flex items-center gap-1" onclick="handleYouTubeConnect()">
+                <span>🔑</span> Connect YouTube
+              </button>
+              <button class="btn btn-outline text-xs flex items-center gap-1" onclick="handleYouTubeUploadConnect()">
+                <span>🚀</span> Connect with Upload Scope
+              </button>
+            </div>
+          `;
+        }
+
+        container.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-4 rounded-lg" style="background: var(--bg); border: 1px solid var(--border)">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="status-dot ${gitDot}"></span>
+                  <span class="font-medium">Git CLI</span>
+                  <span class="badge" style="background: var(--card); color: var(--muted);">${data.git?.version || 'Missing'}</span>
+                </div>
+                <span class="badge badge-read">Source Control</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-lg" style="background: var(--bg); border: 1px solid var(--border)">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="status-dot ${ghCliDot}"></span>
+                  <span class="font-medium">GitHub CLI (gh)</span>
+                  <span class="text-xs" style="color: var(--muted);">${data.githubCli?.notes || 'Optional'}</span>
+                </div>
+                <span class="badge" style="background: var(--card); color: var(--muted);">Optional</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-lg" style="background: var(--bg); border: 1px solid var(--border)">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="status-dot ${ghTokenDot}"></span>
+                  <span class="font-medium">GitHub API Token</span>
+                  <span class="text-xs" style="color: var(--muted);">${data.githubToken?.notes || ''}</span>
+                </div>
+                <span class="badge" style="background: var(--card); color: var(--muted);">${data.githubToken?.configured ? 'Configured' : 'Missing'}</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-lg" style="background: var(--bg); border: 1px solid var(--border)">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="status-dot ${googleDot}"></span>
+                  <span class="font-medium">Google OAuth 2.0 (Reusable)</span>
+                  <span class="badge" style="background: var(--card); color: var(--muted);">${googleStatus.status || 'unconfigured'}</span>
+                  ${modeBadge}
+                </div>
+                <span class="badge badge-read">Secure Connection</span>
+              </div>
+              <div class="mt-2 text-sm" style="color: var(--muted)">
+                <p>${googleStatus.notes || googleStatus.note || 'Google OAuth service status'}</p>
+                ${googleStatus.connectedAccount ? `<p class="mt-1 text-xs">Account: <strong style="color: var(--text)">${googleStatus.connectedAccount}</strong> (Protected by ${googleStatus.storageBackend || 'OS Secure Storage'})</p>` : ''}
+                ${googleStatus.grantedScopes && googleStatus.grantedScopes.length > 0 ? `<p class="mt-1 text-xs">Scopes: ${googleStatus.grantedScopes.join(', ')}</p>` : ''}
+              </div>
+              ${googleActionsHtml}
+            </div>
+
+            <div class="p-4 rounded-lg" style="background: var(--bg); border: 1px solid var(--border)">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="status-dot ${ytDot}"></span>
+                  <span class="font-medium">YouTube Data API v3</span>
+                  <span class="badge" style="background: var(--card); color: var(--muted);">${youtubeStatus.hasUploadScope ? 'Read & Publish Active' : (youtubeStatus.available ? 'Read-Only Active' : (youtubeStatus.connected ? 'Scope Needed' : 'Not Connected'))}</span>
+                  ${youtubeStatus.hasUploadScope ? '<span class="badge badge-publish">Publishing Enabled</span>' : '<span class="badge badge-read">Read-Only</span>'}
+                </div>
+                <span class="badge badge-read">Media Integration</span>
+              </div>
+              <div class="mt-2 text-sm" style="color: var(--muted)">
+                <p>${youtubeStatus.notes || 'YouTube bridge integration for channel inspection, video listing, and video publishing.'}</p>
+                ${youtubeStatus.connectedAccount ? `<p class="mt-1 text-xs">Account: <strong style="color: var(--text)">${youtubeStatus.connectedAccount}</strong></p>` : ''}
+                <p class="mt-1 text-xs font-mono" style="color: var(--muted)">Scopes: youtube.readonly${youtubeStatus.hasUploadScope ? ', youtube.upload' : ''}</p>
+              </div>
+              ${youtubeActionsHtml}
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<p style="color: var(--danger)">Failed to load integrations: ${err.message}</p>`;
+      }
+    }
+
+    // ==========================================
+    // External MCP Server Management
+    // ==========================================
+    let mcpServersData = [];
+    let currentExecutingTool = null;
+
+    function showAddMcpModal() {
+      const modal = document.getElementById('add-mcp-modal');
+      const alertBox = document.getElementById('mcp-add-alert');
+      if (alertBox) alertBox.style.display = 'none';
+      document.getElementById('add-mcp-form').reset();
+      toggleMcpTransportFields();
+      if (modal) modal.style.display = '';
+    }
+
+    function hideAddMcpModal() {
+      const modal = document.getElementById('add-mcp-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function toggleMcpTransportFields() {
+      const transport = document.getElementById('mcp-cfg-transport').value;
+      const stdioFields = document.getElementById('mcp-stdio-fields');
+      const httpFields = document.getElementById('mcp-http-fields');
+      if (transport === 'stdio') {
+        stdioFields.style.display = '';
+        httpFields.style.display = 'none';
+      } else {
+        stdioFields.style.display = 'none';
+        httpFields.style.display = '';
+      }
+    }
+
+    async function submitAddMcpServer(event) {
+      event.preventDefault();
+      const id = document.getElementById('mcp-cfg-id').value.trim();
+      const name = document.getElementById('mcp-cfg-name').value.trim();
+      const description = document.getElementById('mcp-cfg-desc').value.trim();
+      const transport = document.getElementById('mcp-cfg-transport').value;
+      const autoconnect = document.getElementById('mcp-cfg-autoconnect').checked;
+      const alertBox = document.getElementById('mcp-add-alert');
+      const submitBtn = document.getElementById('btn-save-mcp');
+
+      const config = {
+        id,
+        name,
+        description: description || undefined,
+        transport,
+        autoConnect: autoconnect,
+      };
+
+      if (transport === 'stdio') {
+        const command = document.getElementById('mcp-cfg-command').value.trim();
+        if (!command) {
+          if (alertBox) {
+            alertBox.style.display = '';
+            alertBox.style.background = '#3b1a1a';
+            alertBox.style.color = '#f87171';
+            alertBox.textContent = 'Command is required for stdio transport';
+          }
+          return;
+        }
+        config.command = command;
+        const rawArgs = document.getElementById('mcp-cfg-args').value.trim();
+        if (rawArgs) {
+          if (rawArgs.startsWith('[') && rawArgs.endsWith(']')) {
+            try { config.args = JSON.parse(rawArgs); } catch { config.args = rawArgs.split(/\s+/); }
+          } else {
+            config.args = rawArgs.split(/\s+/);
+          }
+        }
+        const rawEnv = document.getElementById('mcp-cfg-env').value.trim();
+        if (rawEnv) {
+          config.env = {};
+          rawEnv.split('\n').forEach(line => {
+            const idx = line.indexOf('=');
+            if (idx > 0) {
+              const k = line.substring(0, idx).trim();
+              const v = line.substring(idx + 1).trim();
+              if (k) config.env[k] = v;
+            }
+          });
+        }
+      } else {
+        const url = document.getElementById('mcp-cfg-url').value.trim();
+        if (!url) {
+          if (alertBox) {
+            alertBox.style.display = '';
+            alertBox.style.background = '#3b1a1a';
+            alertBox.style.color = '#f87171';
+            alertBox.textContent = 'Endpoint URL is required for HTTP transport';
+          }
+          return;
+        }
+        config.url = url;
+        const rawHeaders = document.getElementById('mcp-cfg-headers').value.trim();
+        if (rawHeaders) {
+          config.headers = {};
+          rawHeaders.split('\n').forEach(line => {
+            const idx = line.indexOf(':');
+            if (idx > 0) {
+              const k = line.substring(0, idx).trim();
+              const v = line.substring(idx + 1).trim();
+              if (k) config.headers[k] = v;
+            }
+          });
+        }
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      try {
+        const resp = await fetch('/api/mcp/servers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config),
+        });
+        const result = await resp.json();
+        if (!resp.ok || !result.success) {
+          throw new Error(result.error || 'Failed to add MCP server');
+        }
+        hideAddMcpModal();
+        await loadMcpServers();
+      } catch (err) {
+        if (alertBox) {
+          alertBox.style.display = '';
+          alertBox.style.background = '#3b1a1a';
+          alertBox.style.color = '#f87171';
+          alertBox.textContent = err.message;
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Connect';
+      }
+    }
+
+    async function loadMcpServers() {
+      const container = document.getElementById('mcp-servers-list');
+      const loading = document.getElementById('mcp-servers-loading');
+      const empty = document.getElementById('mcp-servers-empty');
+      if (!container) return;
+
+      loading.style.display = '';
+      container.style.display = 'none';
+      empty.style.display = 'none';
+
+      try {
+        const resp = await fetch('/api/mcp/servers');
+        if (!resp.ok) throw new Error('API unavailable');
+        mcpServersData = await resp.json();
+
+        loading.style.display = 'none';
+        if (!mcpServersData || mcpServersData.length === 0) {
+          empty.style.display = '';
+          return;
+        }
+
+        container.style.display = '';
+        container.innerHTML = mcpServersData.map(renderMcpServer).join('');
+      } catch (err) {
+        loading.style.display = 'none';
+        container.style.display = '';
+        container.innerHTML = `<p style="color: var(--danger)">Failed to load external MCP servers: ${err.message}</p>`;
+      }
+    }
+
+    function renderMcpServer(s) {
+      let statusDot = 'status-missing';
+      let statusBadgeClass = 'badge-destructive';
+      if (s.status === 'connected') {
+        statusDot = 'status-available';
+        statusBadgeClass = 'badge-local-write';
+      } else if (s.status === 'connecting') {
+        statusDot = 'status-optional';
+        statusBadgeClass = 'badge-external-write';
+      } else if (s.status === 'disconnected') {
+        statusDot = 'status-optional';
+        statusBadgeClass = 'badge-read';
+      }
+
+      const tools = s.tools || [];
+      const isConnected = s.status === 'connected';
+
+      return `
+        <div class="card p-5" id="mcp-card-${s.id}">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-lg">${s.name}</h3>
+                <span class="badge" style="background: var(--bg); color: var(--muted);">${s.id}</span>
+                <span class="badge" style="background: var(--bg); color: var(--accent);">${s.transport.toUpperCase()}</span>
+                <span class="badge ${statusBadgeClass}">${s.status}</span>
+              </div>
+              <p class="text-sm mt-1" style="color: var(--muted)">${s.description || 'No description provided'}</p>
+              <div class="mt-1 text-xs font-mono" style="color: var(--muted)">
+                ${s.command ? `Command: <code>${s.command} ${(s.args || []).join(' ')}</code>` : ''}
+                ${s.url ? `URL: <code>${s.url}</code>` : ''}
+              </div>
+              ${s.error ? `<p class="mt-2 text-xs p-2 rounded" style="background: #3b1a1a; color: #f87171;">⚠️ ${s.error}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="status-dot ${statusDot}"></span>
+              <button class="btn btn-outline text-xs" style="color: #f87171; border-color: #7f1d1d;" onclick="removeMcpServer('${s.id}')" title="Remove server">✕ Delete</button>
+            </div>
+          </div>
+
+          <!-- Tools Section -->
+          <div class="mt-4 pt-3 border-t" style="border-color: var(--border)">
+            <details ${isConnected ? 'open' : ''}>
+              <summary class="text-sm font-medium flex items-center justify-between cursor-pointer" style="color: var(--accent)">
+                <span>▶ ${tools.length} Discovered Tools</span>
+                <span class="text-xs" style="color: var(--muted)">${isConnected ? 'Live' : 'Connect to discover tools'}</span>
+              </summary>
+              <div class="mt-3 space-y-2 pl-2">
+                ${tools.length === 0 ? `<p class="text-xs italic" style="color: var(--muted)">No tools discovered or server not connected.</p>` : ''}
+                ${tools.map(t => {
+                  const schemaJson = JSON.stringify(t.inputSchema || {}, null, 2).replace(/"/g, '&quot;');
+                  return `
+                    <div class="p-2.5 rounded-lg flex items-center justify-between text-xs" style="background: var(--bg); border: 1px solid var(--border)">
+                      <div class="flex-1 mr-3">
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono font-semibold" style="color: var(--text)">${t.name}</span>
+                          <span class="badge badge-${t.permissionLevel}">${t.permissionLevel}</span>
+                          ${t.requiresApproval ? `<span class="badge badge-publish">requires approval</span>` : ''}
+                        </div>
+                        <p class="mt-0.5" style="color: var(--muted)">${t.description || 'No description'}</p>
+                      </div>
+                      <div>
+                        <button class="btn btn-primary text-xs" style="padding: 4px 10px;" onclick="showRunToolModal('${s.id}', '${t.name}', '${schemaJson}', '${t.permissionLevel}', ${t.requiresApproval})">
+                          ⚡ Call
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </details>
+          </div>
+
+          <!-- Action Controls -->
+          <div class="mt-4 flex items-center justify-between pt-3 border-t" style="border-color: var(--border)">
+            <div class="text-xs" style="color: var(--muted)">
+              ${s.lastConnected ? `Last connected: ${new Date(s.lastConnected).toLocaleTimeString()}` : 'Never connected'}
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-outline text-xs" onclick="testMcpServer('${s.id}')">🏓 Ping / Test</button>
+              ${isConnected ? `
+                <button class="btn btn-outline text-xs" style="border-color: var(--warning); color: #fbbf24;" onclick="disconnectMcpServer('${s.id}')">Disconnect</button>
+              ` : `
+                <button class="btn btn-primary text-xs" onclick="connectMcpServer('${s.id}')">Connect & Discover</button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function connectMcpServer(id) {
+      try {
+        const resp = await fetch(`/api/mcp/servers/${id}/connect`, { method: 'POST' });
+        const result = await resp.json();
+        if (!resp.ok || !result.success) throw new Error(result.error || 'Connection failed');
+        await loadMcpServers();
+      } catch (err) {
+        alert(`Failed to connect to ${id}: ${err.message}`);
+        await loadMcpServers();
+      }
+    }
+
+    async function disconnectMcpServer(id) {
+      try {
+        const resp = await fetch(`/api/mcp/servers/${id}/disconnect`, { method: 'POST' });
+        const result = await resp.json();
+        if (!resp.ok || !result.success) throw new Error(result.error || 'Disconnect failed');
+        await loadMcpServers();
+      } catch (err) {
+        alert(`Failed to disconnect ${id}: ${err.message}`);
+        await loadMcpServers();
+      }
+    }
+
+    async function testMcpServer(id) {
+      try {
+        const resp = await fetch(`/api/mcp/servers/${id}/test`, { method: 'POST' });
+        const result = await resp.json();
+        if (result.success) {
+          alert(`Health Check OK! Server "${id}" is alive and discovered ${result.toolCount} tools.`);
+        } else {
+          alert(`Health Check FAILED for "${id}":\n${result.error || 'Unknown error'}`);
+        }
+        await loadMcpServers();
+      } catch (err) {
+        alert(`Test error: ${err.message}`);
+      }
+    }
+
+    async function removeMcpServer(id) {
+      if (!confirm(`Are you sure you want to remove MCP server "${id}"?`)) return;
+      try {
+        const resp = await fetch(`/api/mcp/servers/${id}`, { method: 'DELETE' });
+        const result = await resp.json();
+        if (!resp.ok || !result.success) throw new Error(result.error || 'Deletion failed');
+        await loadMcpServers();
+      } catch (err) {
+        alert(`Failed to remove ${id}: ${err.message}`);
+      }
+    }
+
+    // Tool Call Modal
+    function showRunToolModal(serverId, toolName, schemaJsonEscaped, permissionLevel, requiresApproval) {
+      currentExecutingTool = { serverId, toolName, requiresApproval };
+      const modal = document.getElementById('run-tool-modal');
+      const title = document.getElementById('run-tool-title');
+      const serverBadge = document.getElementById('run-tool-server-badge');
+      const permNotice = document.getElementById('run-tool-permission-notice');
+      const schemaView = document.getElementById('run-tool-schema-view');
+      const resultContainer = document.getElementById('run-tool-result-container');
+      const inputs = document.getElementById('run-tool-inputs');
+
+      title.textContent = `Call ${toolName}`;
+      serverBadge.textContent = `Server: ${serverId}`;
+      inputs.value = '{}';
+      resultContainer.style.display = 'none';
+
+      let schemaParsed = {};
+      try {
+        schemaParsed = JSON.parse(schemaJsonEscaped.replace(/&quot;/g, '"'));
+      } catch {
+        schemaParsed = {};
+      }
+      schemaView.textContent = JSON.stringify(schemaParsed, null, 2);
+
+      if (requiresApproval) {
+        permNotice.style.background = '#3b2f1a';
+        permNotice.style.color = '#fbbf24';
+        permNotice.style.border = '1px solid #78350f';
+        permNotice.innerHTML = `<span>⚠️ <strong>Approval Required:</strong> This tool has side effects (${permissionLevel}). Execution requires explicit confirmation.</span>`;
+      } else {
+        permNotice.style.background = '#1e3a5f';
+        permNotice.style.color = '#60a5fa';
+        permNotice.style.border = '1px solid #1e40af';
+        permNotice.innerHTML = `<span>ℹ️ <strong>Read-Only Tool:</strong> Safe to invoke without approval.</span>`;
+      }
+
+      modal.style.display = '';
+    }
+
+    function hideRunToolModal() {
+      document.getElementById('run-tool-modal').style.display = 'none';
+      currentExecutingTool = null;
+    }
+
+    async function executeCurrentTool() {
+      if (!currentExecutingTool) return;
+      const { serverId, toolName, requiresApproval } = currentExecutingTool;
+      const inputsArea = document.getElementById('run-tool-inputs');
+      const outputArea = document.getElementById('run-tool-output');
+      const resultContainer = document.getElementById('run-tool-result-container');
+      const execBtn = document.getElementById('btn-execute-tool');
+
+      let parsedArgs = {};
+      try {
+        parsedArgs = JSON.parse(inputsArea.value.trim() || '{}');
+      } catch (e) {
+        alert('Invalid JSON in Input Parameters: ' + e.message);
+        return;
+      }
+
+      let confirmed = false;
+      if (requiresApproval) {
+        confirmed = confirm(`This tool "${toolName}" on server "${serverId}" may have external side effects or perform write/publish operations.\n\nDo you explicitly approve this execution?`);
+        if (!confirmed) return;
+      }
+
+      execBtn.disabled = true;
+      execBtn.textContent = 'Executing...';
+      resultContainer.style.display = '';
+      outputArea.textContent = 'Calling tool...';
+
+      try {
+        const resp = await fetch('/api/mcp/tools/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serverId, toolName, args: parsedArgs, confirmed }),
+        });
+        const result = await resp.json();
+        if (result.success) {
+          outputArea.textContent = JSON.stringify(result.result, null, 2);
+        } else {
+          outputArea.textContent = `ERROR:\n${result.error || 'Execution failed'}`;
+        }
+      } catch (err) {
+        outputArea.textContent = `FETCH ERROR:\n${err.message}`;
+      } finally {
+        execBtn.disabled = false;
+        execBtn.textContent = 'Execute Tool';
+      }
+    }
+
+    // ==========================================
+    // Unified Integration Catalog
+    // ==========================================
+    let catalogData = null;
+    let catalogFilter = 'all';
+
+    async function loadCatalog() {
+      const container = document.getElementById('catalog-list');
+      if (!container) return;
+      container.innerHTML = `<p style="color: var(--muted)">Loading unified integration catalog...</p>`;
+
+      try {
+        const resp = await fetch('/api/catalog');
+        if (!resp.ok) throw new Error('API unavailable');
+        catalogData = await resp.json();
+
+        // Update metrics
+        const m = catalogData.metrics;
+        document.getElementById('metric-total').textContent = m.totalIntegrations;
+        document.getElementById('metric-builtin').textContent = m.builtInBridges;
+        document.getElementById('metric-custom').textContent = m.customBridges;
+        document.getElementById('metric-mcp').textContent = m.externalMcpServers;
+        document.getElementById('metric-exec').textContent = m.totalExecutableTools;
+
+        renderFilteredCatalog();
+      } catch (err) {
+        container.innerHTML = `<p style="color: var(--danger)">Failed to load catalog: ${err.message}</p>`;
+      }
+    }
+
+    function filterCatalog(type) {
+      catalogFilter = type;
+      document.querySelectorAll('#filter-all, #filter-builtin, #filter-custom, #filter-mcp').forEach(btn => {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline');
+      });
+      const activeBtn = document.getElementById('filter-' + (type === 'builtin-bridge' ? 'builtin' : type === 'custom-bridge' ? 'custom' : type === 'external-mcp' ? 'mcp' : 'all'));
+      if (activeBtn) {
+        activeBtn.classList.remove('btn-outline');
+        activeBtn.classList.add('btn-primary');
+      }
+      renderFilteredCatalog();
+    }
+
+    function renderFilteredCatalog() {
+      const container = document.getElementById('catalog-list');
+      if (!container || !catalogData) return;
+
+      const items = (catalogData.items || []).filter(item => {
+        if (catalogFilter === 'all') return true;
+        return item.type === catalogFilter;
+      });
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-sm text-center py-6" style="color: var(--muted)">No integrations found matching filter "${catalogFilter}".</p>`;
+        return;
+      }
+
+      container.innerHTML = items.map(renderCatalogItem).join('');
+    }
+
+    function renderCatalogItem(item) {
+      let typeBadge = '';
+      if (item.type === 'builtin-bridge') typeBadge = '<span class="badge badge-read">Built-in Bridge</span>';
+      else if (item.type === 'custom-bridge') typeBadge = '<span class="badge badge-local-write">Custom Bridge</span>';
+      else if (item.type === 'external-mcp') typeBadge = '<span class="badge badge-publish">External MCP</span>';
+
+      let statusDot = 'status-missing';
+      if (item.status === 'ready' || item.status === 'connected') statusDot = 'status-available';
+      else if (item.status === 'optional' || item.status === 'connecting' || item.status === 'disconnected') statusDot = 'status-optional';
+
+      const declaredCaps = item.declaredCapabilities || [];
+      const executableCaps = item.executableCapabilities || [];
+
+      return `
+        <div class="card p-5">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-lg">${item.name}</h3>
+                <span class="badge" style="background: var(--bg); color: var(--muted);">${item.id}</span>
+                ${typeBadge}
+                ${item.transport ? `<span class="badge" style="background: var(--bg); color: var(--accent);">${item.transport.toUpperCase()}</span>` : ''}
+              </div>
+              <p class="text-sm mt-1" style="color: var(--muted)">${item.description || 'No description provided'}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="status-dot ${statusDot}"></span>
+              <span class="text-xs font-mono" style="color: var(--muted)">${item.status}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-3 border-t" style="border-color: var(--border)">
+            <!-- Declared Capabilities -->
+            <div>
+              <h4 class="text-xs font-semibold uppercase tracking-wider mb-2 flex items-center justify-between" style="color: var(--muted)">
+                <span>📋 Declared Capabilities (${declaredCaps.length})</span>
+                <span class="text-[10px] font-normal">Manifest specification</span>
+              </h4>
+              <div class="space-y-1.5 pl-1">
+                ${declaredCaps.length === 0 ? `<p class="text-xs italic" style="color: var(--muted)">No declared capabilities.</p>` : ''}
+                ${declaredCaps.map(c => `
+                  <div class="p-2 rounded text-xs" style="background: var(--bg); border: 1px solid var(--border)">
+                    <div class="flex items-center gap-2">
+                      <span class="badge badge-${c.permissionLevel}">${c.permissionLevel}</span>
+                      <span class="font-mono font-medium">${c.action}</span>
+                    </div>
+                    <p class="mt-1" style="color: var(--muted)">${c.description}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Verified Executable Capabilities -->
+            <div>
+              <h4 class="text-xs font-semibold uppercase tracking-wider mb-2 flex items-center justify-between" style="color: var(--muted)">
+                <span>⚡ Executable Capabilities (${executableCaps.length})</span>
+                <span class="text-[10px] font-normal">Live discovered / bound</span>
+              </h4>
+              <div class="space-y-1.5 pl-1">
+                ${executableCaps.length === 0 ? `<p class="text-xs italic" style="color: var(--muted)">No verified executable capabilities currently live.</p>` : ''}
+                ${executableCaps.map(c => `
+                  <div class="p-2 rounded text-xs" style="background: var(--bg); border: 1px solid var(--border)">
+                    <div class="flex items-center gap-2">
+                      <span class="badge badge-${c.permissionLevel}">${c.permissionLevel}</span>
+                      <span class="font-mono font-medium">${c.action}</span>
+                      ${c.requiresApproval ? `<span class="badge badge-publish text-[10px]">approval</span>` : ''}
+                    </div>
+                    <p class="mt-1" style="color: var(--muted)">${c.description}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // -------------------------------------------------------------
+    // Workflow Control Center & Security Approvals
+    // -------------------------------------------------------------
+    let workflowRunsData = [];
+    let currentWorkflowFilter = 'all';
+    let predefinedWorkflows = [];
+    let currentApprovalCheckpoint = null;
+    let currentApprovalRunId = null;
+
+    async function loadWorkflowRuns() {
+      const loading = document.getElementById('workflow-runs-loading');
+      const list = document.getElementById('workflow-runs-list');
+      const empty = document.getElementById('workflow-runs-empty');
+      const alertBox = document.getElementById('workflows-approval-alert');
+      const alertText = document.getElementById('workflows-approval-alert-text');
+
+      try {
+        const resp = await fetch('/api/workflows/runs');
+        if (!resp.ok) throw new Error('Failed to load runs: ' + resp.statusText);
+        workflowRunsData = await resp.json();
+      } catch (err) {
+        console.error('Workflow runs fetch error:', err);
+        workflowRunsData = [];
+      }
+
+      if (loading) loading.style.display = 'none';
+
+      // Update counters
+      const counts = {
+        all: workflowRunsData.length,
+        paused_for_approval: 0,
+        running: 0,
+        completed: 0,
+        failed: 0,
+        cancelled: 0
+      };
+
+      for (const run of workflowRunsData) {
+        if (counts[run.status] !== undefined) {
+          counts[run.status]++;
+        }
+      }
+
+      const elAll = document.getElementById('wf-count-all');
+      const elPaused = document.getElementById('wf-count-paused');
+      const elRunning = document.getElementById('wf-count-running');
+      const elCompleted = document.getElementById('wf-count-completed');
+      const elFailed = document.getElementById('wf-count-failed');
+      const elCancelled = document.getElementById('wf-count-cancelled');
+
+      if (elAll) elAll.textContent = counts.all;
+      if (elPaused) elPaused.textContent = counts.paused_for_approval;
+      if (elRunning) elRunning.textContent = counts.running;
+      if (elCompleted) elCompleted.textContent = counts.completed;
+      if (elFailed) elFailed.textContent = counts.failed;
+      if (elCancelled) elCancelled.textContent = counts.cancelled;
+
+      // Pending approval banner
+      if (alertBox && alertText) {
+        if (counts.paused_for_approval > 0) {
+          alertBox.style.display = 'flex';
+          alertText.textContent = `${counts.paused_for_approval} workflow run${counts.paused_for_approval > 1 ? 's are' : ' is'} paused waiting for security approval checkpoint.`;
+        } else {
+          alertBox.style.display = 'none';
+        }
+      }
+
+      renderWorkflowRuns();
+    }
+
+    function filterWorkflows(status) {
+      currentWorkflowFilter = status;
+      ['all', 'paused', 'running', 'completed', 'failed', 'cancelled'].forEach(key => {
+        const btn = document.getElementById('wf-filter-' + key);
+        if (!btn) return;
+        const target = key === 'paused' ? 'paused_for_approval' : key;
+        if (target === status) {
+          btn.classList.remove('btn-outline');
+          btn.classList.add('btn-primary');
+        } else {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline');
+        }
+      });
+      renderWorkflowRuns();
+    }
+
+    function renderWorkflowRuns() {
+      const list = document.getElementById('workflow-runs-list');
+      const empty = document.getElementById('workflow-runs-empty');
+      if (!list || !empty) return;
+
+      const filtered = workflowRunsData.filter(r => {
+        if (currentWorkflowFilter === 'all') return true;
+        return r.status === currentWorkflowFilter;
+      });
+
+      if (filtered.length === 0) {
+        list.style.display = 'none';
+        empty.style.display = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      list.style.display = '';
+
+      list.innerHTML = filtered.map(renderWorkflowRunCard).join('');
+    }
+
+    function renderWorkflowRunCard(run) {
+      let statusBadge = '';
+      if (run.status === 'paused_for_approval') {
+        statusBadge = '<span class="badge badge-publish animate-pulse">⏸ Paused for Approval</span>';
+      } else if (run.status === 'running') {
+        statusBadge = '<span class="badge badge-local-write">▶ Running</span>';
+      } else if (run.status === 'completed') {
+        statusBadge = '<span class="badge badge-read">✓ Completed</span>';
+      } else if (run.status === 'failed') {
+        statusBadge = '<span class="badge badge-publish">✕ Failed</span>';
+      } else if (run.status === 'cancelled') {
+        statusBadge = '<span class="badge" style="background: var(--bg); color: var(--muted);">⛔ Cancelled</span>';
+      } else {
+        statusBadge = `<span class="badge">${run.status}</span>`;
+      }
+
+      const started = new Date(run.startedAt).toLocaleString();
+      let durationStr = '';
+      if (run.completedAt) {
+        const ms = new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime();
+        durationStr = `${(ms / 1000).toFixed(1)}s`;
+      }
+
+      const steps = run.steps || [];
+      const completedSteps = steps.filter(s => s.status === 'completed').length;
+
+      return `
+        <div class="card p-5" style="border-left: 4px solid ${run.status === 'paused_for_approval' ? 'var(--warning, #f59e0b)' : run.status === 'completed' ? '#10b981' : run.status === 'failed' ? '#ef4444' : 'var(--border)'}">
+          <div class="flex items-start justify-between flex-wrap gap-2">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-semibold text-base">${escapeHtml(run.workflowId || 'Workflow Run')}</h3>
+                <span class="badge font-mono" style="background: var(--bg); color: var(--muted);">${escapeHtml(run.id)}</span>
+                ${statusBadge}
+              </div>
+              <p class="text-xs mt-1" style="color: var(--muted)">
+                Started: ${started} ${durationStr ? `• Duration: ${durationStr}` : ''} • Progress: ${completedSteps}/${steps.length} steps
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              ${run.status === 'paused_for_approval' ? `
+                <button class="btn btn-primary text-xs" style="background: #f59e0b; border-color: #f59e0b; color: #000;" onclick="showApprovalModal('${run.id}')">🛡️ Review Checkpoint</button>
+                <button class="btn btn-outline text-xs" onclick="resumeWorkflowRun('${run.id}')">Resume</button>
+                <button class="btn btn-outline text-xs" style="color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="cancelWorkflowRun('${run.id}')">Cancel</button>
+              ` : ''}
+              ${run.status === 'running' ? `
+                <button class="btn btn-outline text-xs" style="color: #f87171; border-color: rgba(239, 68, 68, 0.3);" onclick="cancelWorkflowRun('${run.id}')">Cancel Run</button>
+              ` : ''}
+              ${run.status === 'cancelled' || run.status === 'failed' ? `
+                <button class="btn btn-outline text-xs" onclick="resumeWorkflowRun('${run.id}')">Restart / Resume</button>
+              ` : ''}
+            </div>
+          </div>
+
+          ${run.error ? `
+            <div class="mt-3 p-3 rounded-lg text-xs" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+              <strong>Error:</strong> ${escapeHtml(run.error)}
+            </div>
+          ` : ''}
+
+          <!-- Steps Progress Accordion -->
+          <div class="mt-4 pt-3 border-t" style="border-color: var(--border)">
+            <details>
+              <summary class="text-xs font-semibold cursor-pointer uppercase tracking-wider flex items-center justify-between" style="color: var(--muted)">
+                <span>Detailed Steps (${steps.length})</span>
+                <span style="color: var(--accent)">View Execution Trace ▶</span>
+              </summary>
+              <div class="mt-3 space-y-2">
+                ${steps.map((st, idx) => `
+                  <div class="p-3 rounded text-xs" style="background: var(--bg); border: 1px solid var(--border)">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono" style="color: var(--muted)">#${idx + 1}</span>
+                        <span class="font-semibold">${escapeHtml(st.name || st.stepId)}</span>
+                        <span class="badge" style="background: rgba(255,255,255,0.05); font-size: 11px;">${escapeHtml(st.provider)}/${escapeHtml(st.action)}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        ${st.durationMs !== undefined ? `<span style="color: var(--muted); font-size: 11px;">${st.durationMs}ms</span>` : ''}
+                        ${st.status === 'completed' ? '<span class="text-emerald-400 font-medium">✓ Passed</span>' :
+                          st.status === 'waiting_for_approval' ? '<span class="text-amber-400 font-medium animate-pulse">⏸ Awaiting Consent</span>' :
+                          st.status === 'failed' ? '<span class="text-red-400 font-medium">✕ Failed</span>' :
+                          st.status === 'skipped' ? '<span class="text-slate-400">↷ Skipped</span>' :
+                          `<span style="color: var(--muted)">${st.status}</span>`}
+                      </div>
+                    </div>
+                    ${st.error ? `<div class="mt-2 text-red-400 font-mono text-[11px]">${escapeHtml(st.error)}</div>` : ''}
+                    ${st.inputs && Object.keys(st.inputs).length > 0 ? `
+                      <details class="mt-2">
+                        <summary class="cursor-pointer text-[11px]" style="color: var(--muted)">Inputs</summary>
+                        <pre class="p-2 mt-1 rounded font-mono text-[11px] overflow-x-auto" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border);">${escapeHtml(JSON.stringify(st.inputs, null, 2))}</pre>
+                      </details>
+                    ` : ''}
+                    ${st.output && Object.keys(st.output).length > 0 ? `
+                      <details class="mt-1">
+                        <summary class="cursor-pointer text-[11px]" style="color: var(--muted)">Output (Redacted)</summary>
+                        <pre class="p-2 mt-1 rounded font-mono text-[11px] overflow-x-auto" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border);">${escapeHtml(JSON.stringify(st.output, null, 2))}</pre>
+                      </details>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          </div>
+        </div>
+      `;
+    }
+
+    async function showApprovalModal(runId) {
+      currentApprovalRunId = runId;
+      const modal = document.getElementById('workflow-approval-modal');
+      const errBox = document.getElementById('modal-appr-error');
+      if (errBox) errBox.style.display = 'none';
+
+      try {
+        const resp = await fetch(`/api/workflows/runs/${runId}/approval`);
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to fetch pending approval details');
+        }
+        const data = await resp.json();
+        currentApprovalCheckpoint = data;
+
+        document.getElementById('modal-appr-meta').textContent = `Run ID: ${runId} • Step: ${data.checkpoint.stepId}`;
+        document.getElementById('modal-appr-provider').textContent = data.checkpoint.provider;
+        document.getElementById('modal-appr-action').textContent = data.checkpoint.action;
+        document.getElementById('modal-appr-inputs').textContent = JSON.stringify(data.checkpoint.inputs, null, 2);
+
+        if (data.consequences) {
+          document.getElementById('modal-appr-consequences-title').textContent = data.consequences.title || 'Potential External Impact';
+          document.getElementById('modal-appr-consequences-desc').textContent = data.consequences.description || '';
+        }
+
+        modal.style.display = '';
+      } catch (err) {
+        alert('Could not open approval review: ' + err.message);
+      }
+    }
+
+    function hideApprovalModal() {
+      const modal = document.getElementById('workflow-approval-modal');
+      if (modal) modal.style.display = 'none';
+      currentApprovalCheckpoint = null;
+      currentApprovalRunId = null;
+    }
+
+    async function submitApprovalDecision(confirmed) {
+      if (!currentApprovalCheckpoint || !currentApprovalRunId) return;
+
+      const errBox = document.getElementById('modal-appr-error');
+      if (errBox) errBox.style.display = 'none';
+
+      const operator = (document.getElementById('modal-appr-operator').value || '').trim();
+      const reason = (document.getElementById('modal-appr-reason').value || '').trim();
+
+      if (confirmed && !operator) {
+        if (errBox) {
+          errBox.textContent = 'Operator identity is strictly required for security auditing.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      const endpoint = confirmed
+        ? `/api/workflows/runs/${currentApprovalRunId}/approve`
+        : `/api/workflows/runs/${currentApprovalRunId}/reject`;
+
+      const payload = confirmed
+        ? {
+            approvalRequestId: currentApprovalCheckpoint.checkpoint.approvalRequestId,
+            approvedBy: operator,
+            reason: reason || undefined,
+            expectedInputs: currentApprovalCheckpoint.checkpoint.inputs
+          }
+        : {
+            approvalRequestId: currentApprovalCheckpoint.checkpoint.approvalRequestId,
+            rejectedBy: operator || 'operator',
+            reason: reason || 'Operation rejected in workflow control center'
+          };
+
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-AgentForge-Client': 'manager'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const resData = await resp.json();
+        if (!resp.ok) {
+          throw new Error(resData.error || 'Request failed with status ' + resp.status);
+        }
+
+        hideApprovalModal();
+        await loadWorkflowRuns();
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = err.message;
+          errBox.style.display = 'block';
+        }
+      }
+    }
+
+    async function resumeWorkflowRun(runId) {
+      try {
+        const resp = await fetch(`/api/workflows/runs/${runId}/resume`, {
+          method: 'POST',
+          headers: { 'X-AgentForge-Client': 'manager' }
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to resume run');
+        }
+        await loadWorkflowRuns();
+      } catch (err) {
+        alert('Resume failed: ' + err.message);
+      }
+    }
+
+    async function cancelWorkflowRun(runId) {
+      if (!confirm('Are you sure you want to cancel this workflow run? Steps already in progress will stop gracefully.')) {
+        return;
+      }
+      try {
+        const resp = await fetch(`/api/workflows/runs/${runId}/cancel`, {
+          method: 'POST',
+          headers: { 'X-AgentForge-Client': 'manager' }
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to cancel run');
+        }
+        await loadWorkflowRuns();
+      } catch (err) {
+        alert('Cancel failed: ' + err.message);
+      }
+    }
+
+    async function showRunWorkflowModal() {
+      const modal = document.getElementById('run-workflow-modal');
+      const select = document.getElementById('run-wf-select');
+      const alertBox = document.getElementById('run-wf-alert');
+      if (alertBox) alertBox.style.display = 'none';
+
+      try {
+        const resp = await fetch('/api/workflows/predefined');
+        if (resp.ok) {
+          predefinedWorkflows = await resp.json();
+          select.innerHTML = predefinedWorkflows.map(wf =>
+            `<option value="${escapeHtml(wf.id)}">${escapeHtml(wf.name)} (${wf.stepCount} steps)</option>`
+          ).join('') + `<option value="custom">-- Custom Workflow Definition (JSON) --</option>`;
+        }
+      } catch (err) {
+        console.error('Failed to load predefined workflows:', err);
+      }
+
+      handleWorkflowSelectChange();
+      modal.style.display = '';
+    }
+
+    function hideRunWorkflowModal() {
+      const modal = document.getElementById('run-workflow-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function handleWorkflowSelectChange() {
+      const val = document.getElementById('run-wf-select').value;
+      const desc = document.getElementById('run-wf-desc');
+      const customContainer = document.getElementById('run-wf-custom-container');
+      const customJson = document.getElementById('run-wf-custom-json');
+
+      if (val === 'custom') {
+        if (desc) desc.textContent = 'Paste a custom JSON workflow definition matching the WorkflowDefinition schema.';
+        if (customContainer) customContainer.style.display = '';
+        if (customJson && !customJson.value.trim()) {
+          customJson.value = JSON.stringify({
+            id: 'custom-check',
+            name: 'Custom Diagnostic Flow',
+            description: 'Custom steps definition',
+            steps: [
+              {
+                id: 'status',
+                name: 'Check status',
+                provider: 'github',
+                action: 'status',
+                inputs: {}
+              }
+            ]
+          }, null, 2);
+        }
+      } else {
+        const selected = predefinedWorkflows.find(w => w.id === val);
+        if (desc) desc.textContent = selected ? selected.description : '';
+        if (customContainer) customContainer.style.display = 'none';
+      }
+    }
+
+    async function launchWorkflowFromModal(event) {
+      event.preventDefault();
+      const val = document.getElementById('run-wf-select').value;
+      const alertBox = document.getElementById('run-wf-alert');
+      if (alertBox) alertBox.style.display = 'none';
+
+      let requestBody = {};
+      if (val === 'custom') {
+        const jsonStr = document.getElementById('run-wf-custom-json').value;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          requestBody = { workflow: parsed };
+        } catch (e) {
+          if (alertBox) {
+            alertBox.textContent = 'Invalid JSON: ' + e.message;
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
+            alertBox.style.color = '#f87171';
+          }
+          return;
+        }
+      } else {
+        requestBody = { workflowId: val };
+      }
+
+      try {
+        const resp = await fetch('/api/workflows/runs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-AgentForge-Client': 'manager'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to start workflow run');
+        }
+
+        hideRunWorkflowModal();
+        switchTab('workflows');
+        await loadWorkflowRuns();
+      } catch (err) {
+        if (alertBox) {
+          alertBox.textContent = err.message;
+          alertBox.style.display = 'block';
+          alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
+          alertBox.style.color = '#f87171';
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Security Approvals Audit Log
+    // -------------------------------------------------------------
+    async function loadApprovals() {
+      const loading = document.getElementById('approvals-loading');
+      const list = document.getElementById('approvals-list');
+      const empty = document.getElementById('approvals-empty');
+
+      try {
+        const resp = await fetch('/api/approvals');
+        if (!resp.ok) throw new Error('Failed to load approvals');
+        const data = await resp.json();
+        const records = data.approvals || [];
+
+        if (loading) loading.style.display = 'none';
+        if (records.length === 0) {
+          if (list) list.style.display = 'none';
+          if (empty) empty.style.display = '';
+          return;
+        }
+
+        if (empty) empty.style.display = 'none';
+        if (list) {
+          list.style.display = '';
+          list.innerHTML = records.map(r => `
+            <div class="card p-4">
+              <div class="flex items-start justify-between flex-wrap gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="badge ${r.status === 'approved' ? 'badge-read' : 'badge-publish'}">${r.status === 'approved' ? '✓ APPROVED' : '✕ REJECTED'}</span>
+                    <span class="font-mono font-medium">${escapeHtml(r.provider || '')}/${escapeHtml(r.action || '')}</span>
+                    ${r.stepId ? `<span class="badge" style="background: var(--bg); color: var(--muted); font-size: 11px;">step: ${escapeHtml(r.stepId)}</span>` : ''}
+                  </div>
+                  <p class="text-xs mt-1" style="color: var(--muted)">
+                    By: <strong>${escapeHtml(r.approvedBy || r.rejectedBy || 'anonymous')}</strong> • Recorded: ${new Date(r.timestamp).toLocaleString()}
+                  </p>
+                  ${r.reason ? `<p class="text-xs mt-1 text-slate-300">Reason: ${escapeHtml(r.reason)}</p>` : ''}
+                </div>
+                ${r.runId ? `<span class="text-xs font-mono" style="color: var(--muted)">run: ${escapeHtml(r.runId)}</span>` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Approvals fetch error:', err);
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Custom Bridge Builder UI Functions
+    // -------------------------------------------------------------
+    let stagedBridgesData = [];
+
+    function setBuilderPrompt(promptText) {
+      const input = document.getElementById('builder-prompt-input');
+      if (input) {
+        input.value = promptText;
+        input.focus();
+      }
+    }
+
+    async function handleBuilderAnalyze() {
+      const prompt = document.getElementById('builder-prompt-input')?.value.trim();
+      const advisory = document.getElementById('builder-strategy-advisory');
+      if (!prompt) {
+        alert('Please enter a description or requirement first.');
+        return;
+      }
+
+      advisory.style.display = '';
+      advisory.style.background = 'rgba(59, 130, 246, 0.1)';
+      advisory.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+      advisory.innerHTML = '🔍 Analyzing existing integrations and MCP tools...';
+
+      try {
+        const resp = await fetch('/api/builder/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            targetName: document.getElementById('builder-target-name')?.value.trim() || undefined,
+            preferredTransport: document.getElementById('builder-preferred-transport')?.value || undefined,
+          }),
+        });
+
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+
+        const st = data.strategy;
+        if (st.type === 'builtin-available') {
+          advisory.style.background = 'rgba(16, 185, 129, 0.1)';
+          advisory.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          advisory.innerHTML = `
+            <div class="font-semibold text-emerald-400 mb-1">✓ Built-in Integration Found (${escapeHtml(st.matchedItem)})</div>
+            <p>${escapeHtml(st.reason)}</p>
+            ${st.suggestedActions?.length ? `<div class="mt-2 text-xs">Available actions: <code>${st.suggestedActions.join(', ')}</code></div>` : ''}
+          `;
+        } else if (st.type === 'mcp-available') {
+          advisory.style.background = 'rgba(168, 85, 247, 0.1)';
+          advisory.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+          advisory.innerHTML = `
+            <div class="font-semibold text-purple-400 mb-1">🔌 Matching External MCP Tool Found</div>
+            <p>${escapeHtml(st.reason)}</p>
+            <div class="mt-2 text-xs">Matched tool: <strong>${escapeHtml(st.matchedItem)}</strong> on server <code>${escapeHtml(st.matchedServerId)}</code></div>
+          `;
+        } else {
+          advisory.style.background = 'rgba(59, 130, 246, 0.1)';
+          advisory.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+          advisory.innerHTML = `
+            <div class="font-semibold text-blue-400 mb-1">⚡ Custom Bridge Recommended</div>
+            <p>${escapeHtml(st.reason)}</p>
+            ${st.suggestedActions?.length ? `<div class="mt-2 text-xs">Proposed actions: <code>${st.suggestedActions.join(', ')}</code></div>` : ''}
+          `;
+        }
+      } catch (err) {
+        advisory.style.background = 'rgba(239, 68, 68, 0.1)';
+        advisory.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        advisory.innerHTML = `<span class="text-red-400">Analysis failed: ${escapeHtml(err.message)}</span>`;
+      }
+    }
+
+    async function handleBuilderGenerate(e) {
+      e.preventDefault();
+      const prompt = document.getElementById('builder-prompt-input')?.value.trim();
+      const targetName = document.getElementById('builder-target-name')?.value.trim();
+      const preferredTransport = document.getElementById('builder-preferred-transport')?.value;
+      const btn = document.getElementById('btn-generate-bridge');
+
+      if (!prompt) {
+        alert('Please specify your integration requirements.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Generating & Validating...';
+
+      try {
+        const resp = await fetch('/api/builder/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, targetName: targetName || undefined, preferredTransport: preferredTransport || undefined }),
+        });
+
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+
+        document.getElementById('builder-prompt-input').value = '';
+        document.getElementById('builder-target-name').value = '';
+        document.getElementById('builder-strategy-advisory').style.display = 'none';
+
+        await loadBuilder();
+      } catch (err) {
+        alert('Bridge generation failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⚡ Generate Staged Bridge';
+      }
+    }
+
+    async function loadBuilder() {
+      const loading = document.getElementById('builder-staged-loading');
+      const list = document.getElementById('builder-staged-list');
+      const empty = document.getElementById('builder-staged-empty');
+
+      try {
+        const resp = await fetch('/api/builder/staged');
+        if (!resp.ok) throw new Error('Failed to load staged bridges');
+        const data = await resp.json();
+        stagedBridgesData = data.staged || [];
+
+        if (loading) loading.style.display = 'none';
+
+        if (stagedBridgesData.length === 0) {
+          if (list) list.style.display = 'none';
+          if (empty) empty.style.display = '';
+          return;
+        }
+
+        if (empty) empty.style.display = 'none';
+        if (list) {
+          list.style.display = '';
+          list.innerHTML = stagedBridgesData.map(renderStagedBridgeCard).join('');
+        }
+      } catch (err) {
+        console.error('Builder staged load error:', err);
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    function renderStagedBridgeCard(b) {
+      const statusColors = {
+        'draft': 'background: #374151; color: #d1d5db;',
+        'validating': 'background: #1e3a8a; color: #93c5fd;',
+        'test-failed': 'background: #7f1d1d; color: #fca5a5;',
+        'awaiting-review': 'background: #78350f; color: #fcd34d;',
+        'registered': 'background: #064e3b; color: #6ee7b7;',
+        'blocked': 'background: #881337; color: #fda4af;',
+      };
+
+      const caps = b.manifest?.capabilities || [];
+      const sec = b.securityCheck;
+      const test = b.testResult;
+
+      return `
+        <div class="card p-5" style="border: 1px solid var(--border);">
+          <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-semibold text-base">${escapeHtml(b.manifest?.displayName || b.name)}</h4>
+                <span class="badge font-mono text-xs" style="${statusColors[b.status] || ''}">${b.status.toUpperCase()}</span>
+                <span class="text-xs font-mono" style="color: var(--muted);">${escapeHtml(b.name)}</span>
+              </div>
+              <p class="text-xs mt-1" style="color: var(--muted);">${escapeHtml(b.manifest?.description || '')}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-outline text-xs" style="padding: 4px 8px;" onclick="validateStagedBridgeUI('${escapeHtml(b.id)}')">🔍 Validate</button>
+              <button class="btn btn-outline text-xs" style="padding: 4px 8px;" onclick="testStagedBridgeUI('${escapeHtml(b.id)}')">🧪 Test Sandbox</button>
+              ${b.status === 'awaiting-review' ? `
+                <button class="btn btn-primary text-xs" style="padding: 4px 10px; background: #059669;" onclick="showRegisterModal('${escapeHtml(b.id)}')">✓ Approve & Register</button>
+              ` : `
+                <button class="btn btn-outline text-xs" disabled style="padding: 4px 10px; opacity: 0.5;" title="Must pass isolated tests first">Approve & Register</button>
+              `}
+              <button class="btn btn-outline text-xs" style="padding: 4px 8px; color: #ef4444;" onclick="deleteStagedBridgeUI('${escapeHtml(b.id)}')">✕</button>
+            </div>
+          </div>
+
+          <!-- Capabilities -->
+          <div class="mb-3">
+            <span class="text-xs font-medium" style="color: var(--muted);">Declared Capabilities:</span>
+            <div class="flex gap-1.5 flex-wrap mt-1">
+              ${caps.map(c => `
+                <span class="badge ${c.permissionLevel === 'read' ? 'badge-read' : c.permissionLevel === 'destructive' ? 'badge-destructive' : 'badge-publish'}">
+                  ${escapeHtml(c.action)} (${escapeHtml(c.permissionLevel)})
+                </span>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Security Analysis Findings -->
+          <div class="p-3 rounded-lg text-xs mb-3" style="background: var(--bg); border: 1px solid var(--border);">
+            <div class="font-medium mb-1">Static Security & Schema Status:
+              <span class="${sec?.passed ? 'text-emerald-400' : 'text-red-400'}">${sec?.passed ? '✓ PASSED' : '✕ ISSUES DETECTED'}</span>
+            </div>
+            ${sec?.findings?.length ? `
+              <ul class="list-disc list-inside space-y-0.5 mt-1 text-slate-300">
+                ${sec.findings.map(f => `<li class="${f.severity === 'error' ? 'text-red-400' : 'text-amber-400'}">[${escapeHtml(f.check)}] ${escapeHtml(f.message)}</li>`).join('')}
+              </ul>
+            ` : '<p class="text-xs text-slate-400">Zero security vulnerabilities or dangerous patterns found.</p>'}
+          </div>
+
+          <!-- Isolated Test Results -->
+          ${test ? `
+            <div class="p-3 rounded-lg text-xs mb-3" style="background: var(--bg); border: 1px solid var(--border);">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-medium">Sandbox Test Suite: <span class="${test.passed ? 'text-emerald-400' : 'text-red-400'}">${test.passed ? '✓ PASSED' : '✕ FAILED'}</span></span>
+                <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc;">Isolation: ${escapeHtml(test.sandboxIsolation)}</span>
+              </div>
+              <p class="text-xs text-slate-300">Duration: ${test.durationMs}ms • Verified Actions: ${test.actionsVerified?.join(', ') || 'none'}</p>
+              ${test.output ? `
+                <details class="mt-2">
+                  <summary class="cursor-pointer text-xs font-mono" style="color: var(--accent);">▶ View Test Runner Output</summary>
+                  <pre class="p-2 mt-1 rounded text-xs font-mono overflow-x-auto" style="background: #000; border: 1px solid var(--border); max-height: 120px;">${escapeHtml(test.output)}</pre>
+                </details>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Code Previews -->
+          <details class="mt-2">
+            <summary class="cursor-pointer text-xs font-medium" style="color: var(--accent);">▶ View Manifest & Executor Source</summary>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+              <div>
+                <span class="text-xs font-mono" style="color: var(--muted);">bridge.json</span>
+                <pre class="p-2 mt-1 rounded text-xs font-mono overflow-x-auto" style="background: #000; border: 1px solid var(--border); max-height: 180px;">${escapeHtml(JSON.stringify(b.manifest, null, 2))}</pre>
+              </div>
+              <div>
+                <span class="text-xs font-mono" style="color: var(--muted);">executor.ts</span>
+                <pre class="p-2 mt-1 rounded text-xs font-mono overflow-x-auto" style="background: #000; border: 1px solid var(--border); max-height: 180px;">${escapeHtml(b.executorCode || '')}</pre>
+              </div>
+            </div>
+          </details>
+        </div>
+      `;
+    }
+
+    async function validateStagedBridgeUI(id) {
+      try {
+        const resp = await fetch(`/api/builder/staged/${encodeURIComponent(id)}/validate`, { method: 'POST' });
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+        await loadBuilder();
+      } catch (err) {
+        alert('Validation failed: ' + err.message);
+      }
+    }
+
+    async function testStagedBridgeUI(id) {
+      try {
+        const resp = await fetch(`/api/builder/staged/${encodeURIComponent(id)}/test`, { method: 'POST' });
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+        await loadBuilder();
+      } catch (err) {
+        alert('Test execution failed: ' + err.message);
+      }
+    }
+
+    function showRegisterModal(id) {
+      document.getElementById('reg-bridge-id').value = id;
+      document.getElementById('reg-operator-identity').value = '';
+      document.getElementById('reg-review-notes').value = '';
+      document.getElementById('reg-bridge-alert').style.display = 'none';
+      document.getElementById('register-bridge-modal').style.display = '';
+    }
+
+    function hideRegisterBridgeModal() {
+      document.getElementById('register-bridge-modal').style.display = 'none';
+    }
+
+    async function confirmRegisterBridge(e) {
+      e.preventDefault();
+      const id = document.getElementById('reg-bridge-id').value;
+      const approvedBy = document.getElementById('reg-operator-identity').value.trim();
+      const reviewNotes = document.getElementById('reg-review-notes').value.trim();
+      const alertEl = document.getElementById('reg-bridge-alert');
+      const btn = document.getElementById('btn-confirm-register');
+
+      if (!approvedBy) {
+        alertEl.style.display = '';
+        alertEl.style.background = 'rgba(239, 68, 68, 0.1)';
+        alertEl.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        alertEl.innerHTML = '<span class="text-red-400">Operator identity is required for production registration.</span>';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Promoting to Production...';
+
+      try {
+        const resp = await fetch(`/api/builder/staged/${encodeURIComponent(id)}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approvedBy, reviewNotes }),
+        });
+
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+
+        hideRegisterBridgeModal();
+        await loadBuilder();
+        await loadBridges();
+        alert(`Bridge "${id}" successfully promoted to production and registered!`);
+      } catch (err) {
+        alertEl.style.display = '';
+        alertEl.style.background = 'rgba(239, 68, 68, 0.1)';
+        alertEl.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        alertEl.innerHTML = `<span class="text-red-400">Registration failed: ${escapeHtml(err.message)}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✓ Approve & Promote to Production';
+      }
+    }
+
+    async function deleteStagedBridgeUI(id) {
+      if (!confirm(`Are you sure you want to discard staged bridge "${id}"?`)) return;
+      try {
+        const resp = await fetch(`/api/builder/staged/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error);
+        await loadBuilder();
+      } catch (err) {
+        alert('Delete failed: ' + err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     // Init
     loadBridges();
+    loadIntegrations();
+
   </script>
 </body>
 </html>
