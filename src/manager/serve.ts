@@ -110,7 +110,11 @@ export function createManagerServer(
   const catalog = new IntegrationCatalog(registry, mcpManager, gitExecutor, googleOAuth);
   const permissions = permissionManager || new PermissionManager();
   mcpManager.setPermissionManager(permissions);
-  const engine = workflowEngine || new WorkflowEngine(registry, permissions, { mcpManager, executor: stepExecutor });
+  const engine = workflowEngine || new WorkflowEngine(registry, permissions, {
+    mcpManager,
+    executor: stepExecutor,
+    storageDir: join(ROOT, 'data', 'workflows'),
+  });
 
   const effectiveStepExecutor = (engine.getExecutor() instanceof StandardStepExecutor)
     ? (engine.getExecutor() as StandardStepExecutor)
@@ -146,6 +150,88 @@ export function createManagerServer(
           action: 'diff-review',
           inputs: {},
           dependsOn: ['inspect-status'],
+        },
+      ],
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'workspace-audit',
+      name: 'Workspace Code & Commit Audit',
+      description: 'Inspects repository metadata, commit logs, and working tree changes (Read-Only)',
+      steps: [
+        {
+          id: 'repo-metadata',
+          name: 'Inspect Repository Metadata',
+          bridge: 'github',
+          action: 'repo-info',
+          inputs: {},
+        },
+        {
+          id: 'recent-commits',
+          name: 'Inspect Recent Commits',
+          bridge: 'github',
+          action: 'log-inspect',
+          inputs: {
+            count: 5,
+          },
+          dependsOn: ['repo-metadata'],
+        },
+        {
+          id: 'status-summary',
+          name: 'Check Working Tree Cleanliness',
+          bridge: 'github',
+          action: 'status-check',
+          inputs: {},
+          dependsOn: ['recent-commits'],
+        },
+      ],
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'git-release-pipeline',
+      name: 'Production Git Release Pipeline with Approvals',
+      description: 'Prepares changelog, checks working tree, creates local tag, and pushes to remote with operator approval checkpoints',
+      steps: [
+        {
+          id: 'verify-status',
+          name: 'Verify Working Tree Status',
+          bridge: 'github',
+          action: 'status-check',
+          inputs: {},
+        },
+        {
+          id: 'generate-changelog',
+          name: 'Prepare Release Changelog',
+          bridge: 'github',
+          action: 'changelog-prepare',
+          inputs: {
+            from: 'HEAD~10',
+            to: 'HEAD',
+          },
+          dependsOn: ['verify-status'],
+        },
+        {
+          id: 'create-tag',
+          name: 'Create Local Git Tag',
+          bridge: 'github',
+          action: 'tag-create',
+          inputs: {
+            name: 'v1.0.0-rc1',
+            message: 'Release Candidate v1.0.0-rc1',
+          },
+          dependsOn: ['generate-changelog'],
+        },
+        {
+          id: 'push-release-tag',
+          name: 'Push Tag to Remote (Requires Approval)',
+          bridge: 'github',
+          action: 'push-tags',
+          inputs: {
+            remote: 'origin',
+            tag: 'v1.0.0-rc1',
+            dryRun: true,
+          },
+          dependsOn: ['create-tag'],
         },
       ],
       createdAt: new Date().toISOString(),
@@ -627,6 +713,57 @@ export function createManagerServer(
       return;
     }
 
+    // GET /api/truth/capabilities - System-wide Capability Truth Report
+    if (req.method === 'GET' && url.pathname === '/api/truth/capabilities') {
+      try {
+        const report = await catalog.getTruthEngine().generateSystemTruthReport();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, report }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+      }
+      return;
+    }
+
+    // GET /api/catalog/presets - List or search curated MCP presets
+    if (req.method === 'GET' && url.pathname === '/api/catalog/presets') {
+      try {
+        const q = url.searchParams.get('q') || undefined;
+        const category = url.searchParams.get('category') || undefined;
+        const presets = catalog.getPresets(q, category);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(presets));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: (err as Error).message }));
+      }
+      return;
+    }
+
+    // POST /api/catalog/presets/install - Install and configure a curated MCP preset
+    if (req.method === 'POST' && url.pathname === '/api/catalog/presets/install') {
+      try {
+        const body = JSON.parse(await readRequestBody(req));
+        const presetId = body.presetId || body.id;
+        if (!presetId) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'presetId is required' }));
+          return;
+        }
+        const state = await catalog.installPreset(presetId, {
+          env: body.env,
+          customArgs: body.customArgs || body.args,
+        });
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, server: state }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+      }
+      return;
+    }
+
     // GET /api/mcp/servers - List configured MCP servers
     if (req.method === 'GET' && url.pathname === '/api/mcp/servers') {
       const servers = mcpManager.listServers();
@@ -735,7 +872,7 @@ export function createManagerServer(
     // GET /api/workflows/predefined - List predefined starter workflows
     if (req.method === 'GET' && url.pathname === '/api/workflows/predefined') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(PREDEFINED_WORKFLOWS));
+      res.end(JSON.stringify(PREDEFINED_WORKFLOWS.map(wf => ({ ...wf, stepCount: wf.steps.length }))));
       return;
     }
 
@@ -1011,6 +1148,41 @@ export function createManagerServer(
           run: {
             ...redactObject(resumedRun),
             id: resumedRun.runId,
+          },
+        }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+      }
+      return;
+    }
+
+    // Reconcile Run: POST /api/workflows/runs/:id/reconcile
+    const reconcileMatch = url.pathname.match(/^\/api\/workflows\/runs\/([a-zA-Z0-9_-]+)\/reconcile$/);
+    if (req.method === 'POST' && reconcileMatch) {
+      const runId = reconcileMatch[1];
+      try {
+        const bodyText = await readRequestBody(req);
+        const body = JSON.parse(bodyText);
+        const { decision, notes, outputOverride, resolvedBy } = body;
+        if (!decision) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'decision is required (mark_completed, mark_failed, or retry_after_verification)' }));
+          return;
+        }
+
+        const reconciledRun = await engine.reconcileRun(runId, decision, {
+          notes,
+          outputOverride,
+          resolvedBy: resolvedBy || 'operator',
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          run: {
+            ...redactObject(reconciledRun),
+            id: reconciledRun.runId,
           },
         }));
       } catch (err) {
