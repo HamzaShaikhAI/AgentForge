@@ -1,7 +1,7 @@
 {
   "name": "agentforge",
-  "description": "AgentForge: Extensible capability harness that adds bridge-based integrations, workflows, approval policies and a local manager dashboard to Antigravity.",
-  "version": "0.1.0",
+  "description": "AgentForge: Local-first integration and workflow platform that adds native bridges, universal MCP presets, approval checkpoints and a Manager dashboard to Antigravity.",
+  "version": "1.0.0",
   "suggestedPrompts": [
     "List available AgentForge bridges and their status",
     "Run a GitHub release workflow for this repository",

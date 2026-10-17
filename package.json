@@ -1,7 +1,7 @@
 {
   "name": "agentforge",
-  "version": "0.1.0",
-  "description": "Extensible capability harness for Google Antigravity",
+  "version": "1.0.0",
+  "description": "Local-first integration and workflow platform for Google Antigravity",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
