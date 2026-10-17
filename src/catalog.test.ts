@@ -84,4 +84,35 @@ describe('IntegrationCatalog (Unified Integration Catalog)', () => {
     // When disconnected and no tools discovered, executable capabilities is 0
     expect(mcpItem?.verifiedExecutableCapabilities.length).toBe(0);
   });
+
+  it('includes curated universal MCP presets and supports search and installation', async () => {
+    const data = await catalog.getCatalog();
+    expect(data.presets).toBeDefined();
+    expect(data.presets.length).toBeGreaterThanOrEqual(8);
+    expect(data.summary.curatedPresets).toBe(data.presets.length);
+
+    // Verify key presets exist
+    const fsPreset = catalog.getPreset('filesystem');
+    expect(fsPreset).toBeDefined();
+    expect(fsPreset?.license).toBe('MIT');
+    expect(fsPreset?.category).toBe('filesystem');
+
+    const ghPreset = catalog.getPreset('github');
+    expect(ghPreset?.authMethod).toBe('env-token');
+    expect(ghPreset?.requiredEnvVars).toContain('GITHUB_PERSONAL_ACCESS_TOKEN');
+
+    // Search by category
+    const dbPresets = catalog.getPresets(undefined, 'database');
+    expect(dbPresets.length).toBeGreaterThanOrEqual(2);
+    expect(dbPresets.some(p => p.id === 'sqlite')).toBe(true);
+    expect(dbPresets.some(p => p.id === 'postgres')).toBe(true);
+
+    // Install a curated preset
+    const installed = await catalog.installPreset('web-fetch');
+    expect(installed.id).toBe('web-fetch');
+    expect(installed.status).toBe('disconnected');
+
+    const updatedData = await catalog.getCatalog();
+    expect(updatedData.items.some(i => i.id === 'mcp:web-fetch')).toBe(true);
+  });
 });

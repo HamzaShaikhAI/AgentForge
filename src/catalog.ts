@@ -2,6 +2,15 @@ import { BridgeRegistry } from './bridge-registry.js';
 import { McpManager } from './mcp/mcp-manager.js';
 import { GitExecutor } from './executors/git-executor.js';
 import { GoogleOAuthService } from './auth/google-oauth.js';
+import { CapabilityTruthEngine } from './truth/index.js';
+import {
+  McpPreset,
+  getCuratedPresets,
+  getPresetById,
+  searchPresets,
+  presetToMcpConfig,
+} from './mcp/presets.js';
+import { McpServerState } from './mcp/types.js';
 
 export interface CatalogCapability {
   name: string;
@@ -32,36 +41,65 @@ export interface UnifiedCatalog {
     builtinBridges: number;
     customBridges: number;
     externalMcpServers: number;
+    curatedPresets: number;
     totalDeclaredCapabilities: number;
     totalExecutableCapabilities: number;
   };
+  metrics?: {
+    totalIntegrations: number;
+    builtInBridges: number;
+    customBridges: number;
+    externalMcpServers: number;
+    curatedPresets: number;
+    totalDeclaredCapabilities: number;
+    totalExecutableTools: number;
+  };
   items: CatalogItem[];
+  presets: McpPreset[];
   timestamp: string;
 }
 
 const BUILTIN_BRIDGE_NAMES = new Set(['github', 'example', 'example-echo', 'youtube']);
 
 export class IntegrationCatalog {
+  private truthEngine: CapabilityTruthEngine;
+
   constructor(
     private registry: BridgeRegistry,
     private mcpManager: McpManager,
     private gitExecutor = new GitExecutor(),
     private googleOAuth = new GoogleOAuthService(),
-  ) {}
+    truthEngine?: CapabilityTruthEngine,
+  ) {
+    this.truthEngine = truthEngine || new CapabilityTruthEngine(this.registry, this.gitExecutor, this.googleOAuth, this.mcpManager);
+  }
+
+  getTruthEngine(): CapabilityTruthEngine {
+    return this.truthEngine;
+  }
 
   async getCatalog(): Promise<UnifiedCatalog> {
     await this.registry.discover();
 
-    // Check Git availability
     let gitOk = false;
     try {
-      await this.gitExecutor.runGit(['--version']);
-      gitOk = true;
+      gitOk = await this.gitExecutor.isGitInstalled();
     } catch {
-      // not available
+      gitOk = false;
     }
 
-    const googleStatus = await this.googleOAuth.getStatus();
+    let googleStatus: { accountConnected: boolean; grantedScopes: string[]; clientConfigured: boolean; connectedAccount?: string | null } = {
+      accountConnected: false,
+      grantedScopes: [],
+      clientConfigured: false,
+      connectedAccount: null,
+    };
+    try {
+      googleStatus = await this.googleOAuth.getStatus();
+    } catch {
+      // unconfigured
+    }
+
     const items: CatalogItem[] = [];
 
     // 1. Process Bridges
@@ -74,69 +112,15 @@ export class IntegrationCatalog {
       const executable: CatalogCapability[] = [];
 
       for (const cap of m.capabilities) {
-        let isCapExecutable = false;
-        let blockerReason: string | undefined;
-
-        if (m.name === 'github') {
-          const gitSupportedActions = new Set([
-            'repo-info',
-            'status-check',
-            'branch-list',
-            'log-inspect',
-            'diff-review',
-            'release-verify',
-          ]);
-
-          if (!gitSupportedActions.has(cap.action)) {
-            isCapExecutable = false;
-            blockerReason = `Action "${cap.action}" is declared in manifest but has no runtime executor implementation`;
-          } else if (!gitOk) {
-            isCapExecutable = false;
-            blockerReason = 'Local git CLI executable is not installed on system PATH';
-          } else {
-            isCapExecutable = true;
-          }
-        } else if (m.name === 'youtube') {
-          const ytSupportedActions = new Set([
-            'channel-inspect',
-            'channel-metadata',
-            'video-list',
-            'video-upload',
-          ]);
-
-          if (!ytSupportedActions.has(cap.action)) {
-            isCapExecutable = false;
-            blockerReason = `Action "${cap.action}" is declared in manifest but has no runtime executor implementation`;
-          } else if (!googleStatus.accountConnected) {
-            isCapExecutable = false;
-            blockerReason = 'Google account is not connected. Run "agentforge auth youtube" to connect.';
-          } else if (cap.action === 'video-upload') {
-            if (!googleStatus.grantedScopes.includes('https://www.googleapis.com/auth/youtube.upload')) {
-              isCapExecutable = false;
-              blockerReason = 'YouTube upload permission has not been granted. Run "agentforge auth youtube --upload" to authorize video publishing.';
-            } else {
-              isCapExecutable = true;
-            }
-          } else if (!googleStatus.grantedScopes.includes('https://www.googleapis.com/auth/youtube.readonly')) {
-            isCapExecutable = false;
-            blockerReason = 'YouTube read-only permission has not been granted. Run "agentforge auth youtube" to authorize.';
-          } else {
-            isCapExecutable = true;
-          }
-        } else if (m.name === 'example' || m.name === 'example-echo') {
-          isCapExecutable = true;
-        } else {
-          // Custom user bridges
-          isCapExecutable = entry.enabled;
-        }
+        const truth = await this.truthEngine.getCapabilityTruth(m.name, cap.action);
 
         const capItem: CatalogCapability = {
           name: cap.action,
           description: cap.description,
           permissionLevel: cap.permissionLevel,
-          requiresApproval: cap.permissionLevel !== 'read' && cap.permissionLevel !== 'local-write',
-          executable: isCapExecutable,
-          reason: blockerReason,
+          requiresApproval: truth.requiresApproval,
+          executable: truth.isExecutable,
+          reason: truth.blockerReason,
           inputSchema: {
             type: 'object',
             properties: (cap.inputs || []).reduce((acc, field) => {
@@ -147,7 +131,7 @@ export class IntegrationCatalog {
         };
 
         declared.push(capItem);
-        if (isCapExecutable) {
+        if (truth.isExecutable) {
           executable.push(capItem);
         }
       }
@@ -233,17 +217,59 @@ export class IntegrationCatalog {
     const totalDeclaredCapabilities = items.reduce((acc, i) => acc + i.declaredCapabilities.length, 0);
     const totalExecutableCapabilities = items.reduce((acc, i) => acc + i.verifiedExecutableCapabilities.length, 0);
 
+    const presets = getCuratedPresets();
+
     return {
       summary: {
         totalIntegrations: items.length,
         builtinBridges,
         customBridges,
         externalMcpServers,
+        curatedPresets: presets.length,
         totalDeclaredCapabilities,
         totalExecutableCapabilities,
       },
+      metrics: {
+        totalIntegrations: items.length,
+        builtInBridges: builtinBridges,
+        customBridges,
+        externalMcpServers,
+        curatedPresets: presets.length,
+        totalDeclaredCapabilities,
+        totalExecutableTools: totalExecutableCapabilities,
+      },
       items,
+      presets,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Search or list curated MCP presets.
+   */
+  getPresets(query?: string, category?: string): McpPreset[] {
+    return searchPresets(query, category);
+  }
+
+  /**
+   * Find a single preset by ID.
+   */
+  getPreset(id: string): McpPreset | undefined {
+    return getPresetById(id);
+  }
+
+  /**
+   * Install and configure a curated MCP preset.
+   */
+  async installPreset(
+    presetId: string,
+    options?: { env?: Record<string, string>; customArgs?: string[] },
+  ): Promise<McpServerState> {
+    const preset = getPresetById(presetId);
+    if (!preset) {
+      throw new Error(`Curated MCP preset "${presetId}" not found in catalog.`);
+    }
+    const config = presetToMcpConfig(preset, options);
+    return this.mcpManager.addServer(config);
   }
 }
