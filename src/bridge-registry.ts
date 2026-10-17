@@ -95,11 +95,19 @@ export class BridgeRegistry {
     return this.entries.get(name);
   }
 
+  getBridge(name: string): BridgeRegistryEntry | undefined {
+    return this.get(name);
+  }
+
   /**
    * List all registered bridges.
    */
   list(): BridgeRegistryEntry[] {
     return Array.from(this.entries.values());
+  }
+
+  getAllBridges(): BridgeRegistryEntry[] {
+    return this.list();
   }
 
   /**

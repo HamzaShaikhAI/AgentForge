@@ -11,5 +11,6 @@ export * from './auth/index.js';
 export * from './mcp/index.js';
 export * from './catalog.js';
 export * from './builder/index.js';
+export * from './truth/index.js';
 export { runCli } from './cli/index.js';
 

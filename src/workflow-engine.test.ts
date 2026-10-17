@@ -323,7 +323,8 @@ describe('WorkflowEngine', () => {
       const run = customEngine.createRun(workflow);
       const result = await customEngine.executeRun(workflow, run);
 
-      expect(result.status).toBe('failed');
+      // Under V1, ambiguous side-effect timeouts enter needs_reconciliation
+      expect(result.status).toBe('needs_reconciliation');
       // Assert it was only called ONCE because non-idempotent actions must not be blindly retried!
       expect(callCount).toBe(1);
     });

@@ -40,6 +40,8 @@ export interface McpDiscoveredTool {
   permissionLevel: PermissionLevel;
   /** Whether explicit user approval is required before execution */
   requiresApproval: boolean;
+  /** Whether this action causes side effects */
+  sideEffects?: boolean;
 }
 
 export interface McpServerInfo {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { resolve } from 'node:path';
 import { GitExecutor } from './git-executor.js';
 
@@ -73,5 +73,71 @@ describe('GitExecutor (Real Local Git Integration)', () => {
     expect(status).toHaveProperty('clean');
 
     await expect(executor.execute('nonexistent-action')).rejects.toThrow('Unsupported or unimplemented action');
+  });
+
+  it('prepares formatted changelog from git history', async () => {
+    const result = await executor.changelogPrepare(repoRoot);
+    expect(result.repoPath).toBe(repoRoot);
+    expect(result.commitCount).toBeGreaterThan(0);
+    expect(result.changelog).toContain('## Changelog');
+    expect(result.commits.length).toBeGreaterThan(0);
+
+    // Also via execute dispatcher
+    const dispatchResult = (await executor.execute('changelog-prepare', { path: repoRoot })) as Record<string, unknown>;
+    expect(dispatchResult).toHaveProperty('changelog');
+  });
+
+  it('prevents deleting the currently checked out branch', async () => {
+    const info = await executor.repoInfo(repoRoot);
+    await expect(executor.branchDelete(repoRoot, info.branch)).rejects.toThrow(
+      /Cannot delete active checked-out branch/i,
+    );
+  });
+
+  it('reports blocker when creating release without GITHUB_TOKEN', async () => {
+    const savedToken = process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    try {
+      const result = await executor.releaseCreate(repoRoot, {
+        tag: 'v1.0.0-test',
+        title: 'V1 Test Release',
+        body: 'Notes',
+      });
+      expect(result.success).toBe(false);
+      expect(result.blocker).toContain('GITHUB_TOKEN');
+    } finally {
+      if (savedToken) process.env.GITHUB_TOKEN = savedToken;
+    }
+  });
+
+  it('supports push-commits and push-tags in dry-run mode', async () => {
+    const gitSpy = vi.spyOn(executor, 'runGit').mockImplementation(async args => {
+      if (args.includes('--is-inside-work-tree')) {
+        return { stdout: 'true', stderr: '' };
+      }
+      if (args.includes('--abbrev-ref')) {
+        return { stdout: 'master', stderr: '' };
+      }
+      return { stdout: 'Everything up-to-date', stderr: '' };
+    });
+
+    const pushResult = (await executor.execute('push-commits', {
+      path: repoRoot,
+      remote: 'origin',
+      dryRun: true,
+    })) as Record<string, unknown>;
+    expect(pushResult.dryRun).toBe(true);
+    expect(pushResult.remote).toBe('origin');
+
+    const tagPushResult = (await executor.execute('push-tags', {
+      path: repoRoot,
+      remote: 'origin',
+      tag: 'v1.0.0',
+      dryRun: true,
+    })) as Record<string, unknown>;
+    expect(tagPushResult.dryRun).toBe(true);
+    expect(tagPushResult.tag).toBe('v1.0.0');
+
+    gitSpy.mockRestore();
   });
 });

@@ -170,7 +170,7 @@ export interface WorkflowDefinition {
   /** Ordered steps */
   steps: WorkflowStep[];
   /** When this workflow was created */
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface WorkflowStep {
@@ -194,6 +194,12 @@ export interface WorkflowStep {
   retryDelayMs?: number;
   /** Whether the action is explicitly established as idempotent and safe to retry even if publish/destructive */
   safeToRetry?: boolean;
+  /** Optional execution timeout in milliseconds for this step */
+  timeoutMs?: number;
+  /** Optional condition expression to evaluate before step executes */
+  condition?: string;
+  /** Whether this step is a cleanup step that runs during workflow cancellation or failure */
+  cleanup?: boolean;
   /** Whether to stop workflow on failure */
   stopOnFailure?: boolean;
 }
@@ -208,7 +214,8 @@ export type StepStatus =
   | 'completed'
   | 'failed'
   | 'skipped'
-  | 'cancelled';
+  | 'cancelled'
+  | 'needs_reconciliation';
 
 export interface StepResult {
   stepId: string;
@@ -222,6 +229,7 @@ export interface StepResult {
   approvalRequestId?: string;
   attempts?: number;
   inputs?: Record<string, unknown>;
+  reconciliation?: ReconciliationContext;
 }
 
 export type WorkflowRunStatus =
@@ -231,7 +239,25 @@ export type WorkflowRunStatus =
   | 'failed'
   | 'stopped'
   | 'paused_for_approval'
-  | 'cancelled';
+  | 'cancelled'
+  | 'needs_reconciliation';
+
+export interface ReconciliationContext {
+  stepId: string;
+  action: string;
+  bridge: string;
+  sideEffects: boolean;
+  detectedAt: string;
+  reason: string;
+  error?: string;
+  inputs?: Record<string, unknown>;
+  suggestedAction: string;
+  options: Array<'verify_remote_state' | 'mark_completed' | 'mark_failed' | 'retry_after_verification'>;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionDecision?: string;
+  resolutionNotes?: string;
+}
 
 export interface ApprovalCheckpoint {
   approvalRequestId: string;
@@ -247,6 +273,28 @@ export interface ApprovalCheckpoint {
   approvedBy?: string;
   approvedAt?: string;
   rejectionReason?: string;
+}
+
+export interface WorkflowDryRunStep {
+  stepId: string;
+  name: string;
+  bridge: string;
+  action: string;
+  permissionLevel: PermissionLevel;
+  requiresApproval: boolean;
+  approvalReason?: string;
+  missingCredentials: string[];
+  isNonIdempotent: boolean;
+  timeoutMs: number;
+  condition?: string;
+  cleanup?: boolean;
+}
+
+export interface WorkflowDryRunResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  steps: WorkflowDryRunStep[];
 }
 
 export interface WorkflowRun {
@@ -266,6 +314,75 @@ export interface WorkflowRun {
   error?: string;
   /** Active approval checkpoint if paused for approval */
   pendingApproval?: ApprovalCheckpoint;
+  /** Active reconciliation context if paused due to ambiguous outcome */
+  reconciliation?: ReconciliationContext;
+}
+
+// ─── Capability Truth Engine Types ──────────────────────────────────
+
+export type CapabilityTruthStatus =
+  | 'declared'               // Declared in manifest schema, no runtime code yet
+  | 'implemented'            // Runtime executor code exists
+  | 'unit-tested'            // Automated test suite coverage verified
+  | 'locally-verified'       // Local prerequisites (system CLI, disk, DPAPI) verified operational
+  | 'live-verified'          // Verified against real live remote provider endpoint with valid credentials
+  | 'unsupported-or-blocked'; // Missing prerequisite, missing API key, unverified client, or platform incompatibility
+
+export interface CapabilityTruthRecord {
+  bridge: string;
+  action: string;
+  permissionLevel: PermissionLevel;
+  sideEffects: boolean;
+  status: CapabilityTruthStatus;
+  statusDetails: string;
+  isExecutable: boolean;
+  requiresApproval: boolean;
+  inputs?: SchemaField[];
+  outputs?: SchemaField[];
+  verifiedAt?: string;
+  blockerReason?: string;
+}
+
+export interface BridgeTruthSummary {
+  bridge: string;
+  displayName: string;
+  version: string;
+  status: 'fully-verified' | 'partially-verified' | 'blocked' | 'declared-only';
+  capabilities: CapabilityTruthRecord[];
+  declaredCount: number;
+  implementedCount: number;
+  unitTestedCount: number;
+  locallyVerifiedCount: number;
+  liveVerifiedCount: number;
+  blockedCount: number;
+}
+
+export interface SystemTruthReport {
+  timestamp: string;
+  summaries: BridgeTruthSummary[];
+  totalDeclared: number;
+  totalImplemented: number;
+  totalUnitTested: number;
+  totalLocallyVerified: number;
+  totalLiveVerified: number;
+  totalBlocked: number;
+}
+
+// ─── Point-of-Execution Audit Types ────────────────────────────────
+
+export interface ExecutionAuditRecord {
+  id: string;
+  timestamp: string;
+  bridge: string;
+  action: string;
+  permissionLevel: PermissionLevel;
+  requiresApproval: boolean;
+  approvedBy?: string;
+  inputHash: string;
+  durationMs: number;
+  success: boolean;
+  error?: string;
+  caller?: string;
 }
 
 // ─── Bridge Registry ───────────────────────────────────────────────

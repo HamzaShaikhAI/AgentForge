@@ -11,6 +11,8 @@ import {
   StepStatus,
   ApprovalCheckpoint,
   PermissionLevel,
+  WorkflowDryRunResult,
+  WorkflowDryRunStep,
 } from './types.js';
 import { PermissionManager, PermissionCheckResult } from './permissions.js';
 import { BridgeRegistry } from './bridge-registry.js';
@@ -99,6 +101,41 @@ export class WorkflowEngine {
     return run;
   }
 
+  /**
+   * Create and execute a workflow run in a single call.
+   */
+  async run(workflow: WorkflowDefinition, options?: { signal?: AbortSignal }): Promise<WorkflowRun> {
+    const run = this.createRun(workflow);
+    return this.executeRun(workflow, run, options);
+  }
+
+  /**
+   * Start a workflow run by workflow definition or ID with optional initial inputs.
+   */
+  async startRun(
+    workflowOrId: WorkflowDefinition | string,
+    initialInputs?: Record<string, unknown>,
+  ): Promise<WorkflowRun> {
+    let workflow: WorkflowDefinition;
+    if (typeof workflowOrId === 'string') {
+      const found = this.workflows.get(workflowOrId);
+      if (!found) {
+        throw new Error(`Workflow "${workflowOrId}" not found`);
+      }
+      workflow = found;
+    } else {
+      workflow = workflowOrId;
+      this.workflows.set(workflow.id, workflow);
+    }
+
+    const run = this.createRun(workflow);
+    if (initialInputs && Object.keys(initialInputs).length > 0 && workflow.steps.length > 0) {
+      workflow.steps[0].inputs = { ...workflow.steps[0].inputs, ...initialInputs };
+    }
+
+    return this.executeRun(workflow, run);
+  }
+
   registerWorkflow(workflow: WorkflowDefinition): void {
     this.workflows.set(workflow.id, workflow);
   }
@@ -120,29 +157,33 @@ export class WorkflowEngine {
   ): Record<string, unknown> {
     const resolveValue = (val: unknown): unknown => {
       if (typeof val === 'string') {
+        // Interpolate environment variables: ${env:VAR} and {{env.VAR}} / {{ env.VAR }}
+        let processed = val.replace(/\$\{env:([a-zA-Z0-9_]+)\}/g, (_m, key) => process.env[key] ?? '');
+        processed = processed.replace(/\{\{\s*env\.([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key) => process.env[key] ?? '');
+
         // Direct reference preserving structured values
-        const dollarMatch = val.match(/^\$steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+))?$/);
+        const dollarMatch = processed.match(/^\$steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+))?$/);
         if (dollarMatch) {
           return this.lookupStepOutput(dollarMatch[1], dollarMatch[2], run);
         }
 
-        const exactMustacheMatch = val.match(/^\{\{\s*steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+?))?\s*\}\}$/);
+        const exactMustacheMatch = processed.match(/^\{\{\s*steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+?))?\s*\}\}$/);
         if (exactMustacheMatch) {
           return this.lookupStepOutput(exactMustacheMatch[1], exactMustacheMatch[2], run);
         }
 
         // Interpolated string: replaces {{steps.<id>.output.<field>}}
-        if (val.includes('{{') && val.includes('}}')) {
-          return val.replace(/\{\{\s*steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+?))?\s*\}\}/g, (_match, stepId, fieldPath) => {
+        if (processed.includes('{{') && processed.includes('}}')) {
+          return processed.replace(/\{\{\s*steps\.([a-zA-Z0-9_-]+)\.output(?:\.(.+?))?\s*\}\}/g, (_match, stepId, fieldPath) => {
             const resolved = this.lookupStepOutput(stepId, fieldPath, run);
             if (typeof resolved === 'object' && resolved !== null) {
               return JSON.stringify(resolved);
             }
-            return String(resolved);
+            return String(resolved ?? '');
           });
         }
 
-        return val;
+        return processed;
       }
 
       if (Array.isArray(val)) {
@@ -176,22 +217,153 @@ export class WorkflowEngine {
       throw new Error(`Step reference error: step "${stepId}" has not completed successfully (current status: "${stepResult.status}")`);
     }
 
-    const output = stepResult.output;
-    if (!fieldPath || fieldPath.trim() === '') {
-      return output;
+    let rawPath = fieldPath?.trim();
+    let filters: string[] = [];
+    if (rawPath && rawPath.includes('|')) {
+      const parts = rawPath.split('|').map(p => p.trim());
+      rawPath = parts[0];
+      filters = parts.slice(1);
     }
 
+    const output = stepResult.output;
     let current: any = output;
-    for (const part of fieldPath.split('.')) {
-      if (current === null || current === undefined || typeof current !== 'object') {
-        throw new Error(`Step reference error: field "${fieldPath}" does not exist on output of step "${stepId}"`);
+
+    if (rawPath && rawPath.length > 0) {
+      for (const part of rawPath.split('.')) {
+        if (current === null || current === undefined || typeof current !== 'object') {
+          throw new Error(`Step reference error: field "${fieldPath}" does not exist on output of step "${stepId}"`);
+        }
+        if (!(part in current)) {
+          throw new Error(`Step reference error: field "${fieldPath}" does not exist on output of step "${stepId}"`);
+        }
+        current = current[part];
       }
-      if (!(part in current)) {
-        throw new Error(`Step reference error: field "${fieldPath}" does not exist on output of step "${stepId}"`);
-      }
-      current = current[part];
     }
+
+    for (const filter of filters) {
+      current = this.applyFilter(current, filter);
+    }
+
     return current;
+  }
+
+  private applyFilter(val: any, filter: string): unknown {
+    const trimmed = filter.trim();
+    switch (trimmed) {
+      case 'upper':
+        return String(val ?? '').toUpperCase();
+      case 'lower':
+        return String(val ?? '').toLowerCase();
+      case 'trim':
+        return String(val ?? '').trim();
+      case 'json':
+        return typeof val === 'string' ? val : JSON.stringify(val);
+      case 'length':
+        if (Array.isArray(val)) return val.length;
+        if (typeof val === 'string') return val.length;
+        if (val !== null && typeof val === 'object') return Object.keys(val).length;
+        return 0;
+      default:
+        return val;
+    }
+  }
+
+  /**
+   * Safely evaluate a step condition against the workflow run state.
+   */
+  evaluateCondition(condition: string, run: WorkflowRun): boolean {
+    const trimmed = condition.trim();
+    if (!trimmed) return true;
+
+    const resolveContextVal = (path: string): unknown => {
+      const parts = path.trim().split('.');
+      if (parts[0] !== 'steps') {
+        return undefined;
+      }
+      const stepId = parts[1];
+      const stepRes = run.steps.find(s => s.stepId === stepId);
+      if (!stepRes) return undefined;
+      if (parts.length === 2) return stepRes;
+      if (parts[2] === 'status') return stepRes.status;
+      if (parts[2] === 'output') {
+        let current: any = stepRes.output;
+        for (let i = 3; i < parts.length; i++) {
+          if (current === null || current === undefined || typeof current !== 'object') {
+            return undefined;
+          }
+          current = current[parts[i]];
+        }
+        return current;
+      }
+      if (parts[2] === 'inputs') {
+        let current: any = stepRes.inputs;
+        for (let i = 3; i < parts.length; i++) {
+          if (current === null || current === undefined || typeof current !== 'object') {
+            return undefined;
+          }
+          current = current[parts[i]];
+        }
+        return current;
+      }
+      return undefined;
+    };
+
+    if (trimmed.startsWith('!')) {
+      const inner = trimmed.slice(1).trim();
+      const val = resolveContextVal(inner);
+      return !val;
+    }
+
+    const opRegex = /^(.*?)\s*(===|!==|==|!=|>=|<=|>|<)\s*(.*)$/;
+    const match = trimmed.match(opRegex);
+    if (match) {
+      const rawLeft = match[1].trim();
+      const op = match[2];
+      const rawRight = match[3].trim();
+
+      const parseLiteral = (lit: string): unknown => {
+        if (lit === 'true') return true;
+        if (lit === 'false') return false;
+        if (lit === 'null') return null;
+        if (lit === 'undefined') return undefined;
+        if ((lit.startsWith("'") && lit.endsWith("'")) || (lit.startsWith('"') && lit.endsWith('"'))) {
+          return lit.slice(1, -1);
+        }
+        const num = Number(lit);
+        if (!isNaN(num) && lit !== '') return num;
+        if (lit.startsWith('steps.')) {
+          return resolveContextVal(lit);
+        }
+        return lit;
+      };
+
+      const leftVal = rawLeft.startsWith('steps.') ? resolveContextVal(rawLeft) : parseLiteral(rawLeft);
+      const rightVal = parseLiteral(rawRight);
+
+      switch (op) {
+        case '===':
+        case '==':
+          return leftVal === rightVal || String(leftVal) === String(rightVal);
+        case '!==':
+        case '!=':
+          return leftVal !== rightVal && String(leftVal) !== String(rightVal);
+        case '>':
+          return Number(leftVal) > Number(rightVal);
+        case '<':
+          return Number(leftVal) < Number(rightVal);
+        case '>=':
+          return Number(leftVal) >= Number(rightVal);
+        case '<=':
+          return Number(leftVal) <= Number(rightVal);
+      }
+    }
+
+    if (trimmed.startsWith('steps.')) {
+      const val = resolveContextVal(trimmed);
+      return Boolean(val);
+    }
+
+    return true;
   }
 
   /**
@@ -252,6 +424,16 @@ export class WorkflowEngine {
           }
         }
 
+        // Evaluate dynamic condition if defined
+        if (step.condition) {
+          const shouldRun = this.evaluateCondition(step.condition, run);
+          if (!shouldRun) {
+            stepResult.status = 'skipped';
+            stepResult.error = `Condition evaluated to false: "${step.condition}"`;
+            continue;
+          }
+        }
+
         // Dynamically resolve step inputs
         let resolvedInputs: Record<string, unknown>;
         try {
@@ -285,6 +467,7 @@ export class WorkflowEngine {
           stepResult.status = 'failed';
           stepResult.error = (err as Error).message;
           if (step.stopOnFailure !== false) {
+            await this.runCleanupSteps(workflow, run);
             run.status = 'failed';
             run.error = `Step "${step.id}" input resolution failed: ${stepResult.error}`;
             run.completedAt = new Date().toISOString();
@@ -356,6 +539,7 @@ export class WorkflowEngine {
             stepResult.status = 'failed';
             stepResult.error = `Bridge "${step.bridge}" not found in registry`;
             if (step.stopOnFailure !== false) {
+              await this.runCleanupSteps(workflow, run);
               run.status = 'failed';
               run.error = `Step "${step.id}" failed: ${stepResult.error}`;
               run.completedAt = new Date().toISOString();
@@ -399,6 +583,7 @@ export class WorkflowEngine {
           stepResult.status = 'failed';
           stepResult.error = permCheck.reason;
           if (step.stopOnFailure !== false) {
+            await this.runCleanupSteps(workflow, run);
             run.status = 'failed';
             run.error = `Step "${step.id}" not permitted: ${permCheck.reason}`;
             run.completedAt = new Date().toISOString();
@@ -462,6 +647,41 @@ export class WorkflowEngine {
             await this.saveRun(run);
             break;
           } catch (e) {
+            const err = e as Error;
+            const errMsg = err.message.toLowerCase();
+            const isAmbiguousError =
+              errMsg.includes('timeout') ||
+              errMsg.includes('econnreset') ||
+              errMsg.includes('etimedout') ||
+              errMsg.includes('504') ||
+              errMsg.includes('socket hang up');
+
+            // Non-idempotent operations with side effects must enter reconciliation rather than blindly repeating
+            const isNonIdempotent = this.isActionNonIdempotent(step.bridge, step.action);
+            if (isNonIdempotent && isAmbiguousError && !step.safeToRetry) {
+              stepResult.status = 'needs_reconciliation';
+              stepResult.error = `Ambiguous execution failure: ${err.message}. Execution paused in reconciliation state to prevent duplicate side effects.`;
+              stepResult.completedAt = new Date().toISOString();
+              stepResult.reconciliation = {
+                stepId: step.id,
+                action: step.action,
+                bridge: step.bridge,
+                sideEffects: true,
+                detectedAt: new Date().toISOString(),
+                reason: `Ambiguous error during execution: ${err.message}`,
+                error: err.message,
+                inputs: resolvedInputs,
+                suggestedAction: 'Verify remote provider state before retrying or marking step completed.',
+                options: ['verify_remote_state', 'mark_completed', 'mark_failed', 'retry_after_verification'],
+              };
+
+              run.status = 'needs_reconciliation';
+              run.error = `Workflow paused: Step "${step.id}" entered reconciliation state.`;
+              run.reconciliation = stepResult.reconciliation;
+              await this.saveRun(run);
+              return run;
+            }
+
             if (attempts < maxAttempts && step.retryDelayMs && step.retryDelayMs > 0) {
               await new Promise(r => setTimeout(r, step.retryDelayMs));
             }
@@ -471,6 +691,7 @@ export class WorkflowEngine {
               stepResult.completedAt = new Date().toISOString();
 
               if (step.stopOnFailure !== false) {
+                await this.runCleanupSteps(workflow, run);
                 run.status = 'failed';
                 run.error = `Step "${step.id}" failed: ${stepResult.error}`;
                 run.completedAt = new Date().toISOString();
@@ -619,11 +840,112 @@ export class WorkflowEngine {
       }
     }
 
+    if (run.status === 'needs_reconciliation') {
+      throw new Error(`Cannot resume run "${run.runId}": run requires reconciliation before continuing. Call reconcileRun() first.`);
+    }
+
     return this.executeRun(workflow, run, effectiveOptions);
   }
 
   /**
-   * Cooperatively cancel a workflow run.
+   * Reconcile a workflow run paused in needs_reconciliation state.
+   */
+  async reconcileRun(
+    runId: string,
+    decision: 'mark_completed' | 'mark_failed' | 'retry_after_verification',
+    options?: {
+      stepId?: string;
+      resolvedBy?: string;
+      notes?: string;
+      outputOverride?: unknown;
+    },
+  ): Promise<WorkflowRun> {
+    const run = await this.getRun(runId);
+    if (!run) {
+      throw new Error(`Workflow run "${runId}" not found`);
+    }
+
+    if (run.status !== 'needs_reconciliation') {
+      throw new Error(`Workflow run "${runId}" is not in needs_reconciliation state (current: ${run.status})`);
+    }
+
+    const stepId = options?.stepId || run.reconciliation?.stepId;
+    const stepResult = run.steps.find(s => s.stepId === stepId);
+    if (!stepResult) {
+      throw new Error(`Step "${stepId}" not found in run "${runId}"`);
+    }
+
+    const now = new Date().toISOString();
+    const resolvedBy = options?.resolvedBy || 'operator';
+    const notes = options?.notes || `Reconciliation decision: ${decision}`;
+
+    if (stepResult.reconciliation) {
+      stepResult.reconciliation.resolvedAt = now;
+      stepResult.reconciliation.resolvedBy = resolvedBy;
+      stepResult.reconciliation.resolutionDecision = decision;
+      stepResult.reconciliation.resolutionNotes = notes;
+    }
+
+    if (decision === 'mark_completed') {
+      stepResult.status = 'completed';
+      stepResult.output = options?.outputOverride ?? { reconciled: true, notes };
+      delete stepResult.error;
+      delete run.reconciliation;
+      run.status = 'running';
+      delete run.error;
+      await this.saveRun(run);
+
+      // Continue executing remaining steps
+      const workflow = this.workflows.get(run.workflowId);
+      if (workflow) {
+        return this.executeRun(workflow, run);
+      }
+      return run;
+    }
+
+    if (decision === 'mark_failed') {
+      stepResult.status = 'failed';
+      run.status = 'failed';
+      run.error = `Reconciliation resolved as failed: ${notes}`;
+      run.completedAt = now;
+      await this.saveRun(run);
+      return run;
+    }
+
+    if (decision === 'retry_after_verification') {
+      stepResult.status = 'pending';
+      delete stepResult.error;
+      delete stepResult.reconciliation;
+      delete run.reconciliation;
+      run.status = 'running';
+      delete run.error;
+      await this.saveRun(run);
+
+      const workflow = this.workflows.get(run.workflowId);
+      if (workflow) {
+        return this.executeRun(workflow, run);
+      }
+      return run;
+    }
+
+    throw new Error(`Invalid reconciliation decision "${decision}"`);
+  }
+
+  private isActionNonIdempotent(bridgeName: string, actionName: string): boolean {
+    if (bridgeName.startsWith('mcp:')) {
+      const serverId = bridgeName.slice(4);
+      const server = this.mcpManager?.getServer(serverId);
+      const tool = server?.tools.find(t => t.name === actionName);
+      return tool?.sideEffects === true || tool?.permissionLevel === 'external-write' || tool?.permissionLevel === 'publish' || tool?.permissionLevel === 'destructive';
+    }
+    const entry = this.registry.getBridge(bridgeName);
+    if (!entry) return false;
+    const cap = entry.manifest.capabilities.find(c => c.action === actionName);
+    return cap?.sideEffects === true || cap?.permissionLevel === 'external-write' || cap?.permissionLevel === 'publish' || cap?.permissionLevel === 'destructive';
+  }
+
+  /**
+   * Cooperatively cancel a workflow run and trigger any cleanup steps.
    */
   async cancelRun(runId: string, reason = 'Cancelled by user'): Promise<WorkflowRun> {
     const controller = this.activeControllers.get(runId);
@@ -641,9 +963,161 @@ export class WorkflowEngine {
         s.status = 'cancelled';
       }
     }
+    const workflow = this.workflows.get(run.workflowId);
+    if (workflow) {
+      await this.runCleanupSteps(workflow, run);
+    }
     run.completedAt = new Date().toISOString();
     await this.saveRun(run);
     return run;
+  }
+
+  /**
+   * Execute steps marked with cleanup: true that have not yet run.
+   */
+  async runCleanupSteps(workflow: WorkflowDefinition, run: WorkflowRun): Promise<void> {
+    const cleanupSteps = workflow.steps.filter(s => s.cleanup === true);
+    for (const step of cleanupSteps) {
+      let stepResult = this.getStepResult(run, step.id);
+      if (stepResult && (stepResult.status === 'completed' || stepResult.status === 'running')) {
+        continue;
+      }
+      if (!stepResult) {
+        stepResult = {
+          stepId: step.id,
+          status: 'pending',
+        };
+        run.steps.push(stepResult);
+      }
+      stepResult.status = 'running';
+      stepResult.startedAt = new Date().toISOString();
+      try {
+        const resolvedInputs = this.resolveStepInputs(step.inputs, run);
+        stepResult.inputs = resolvedInputs;
+        const output = await this.executor.execute(step, resolvedInputs);
+        stepResult.status = 'completed';
+        stepResult.output = output;
+        stepResult.completedAt = new Date().toISOString();
+      } catch (err) {
+        stepResult.status = 'failed';
+        stepResult.error = `Cleanup step failed: ${(err as Error).message}`;
+        stepResult.completedAt = new Date().toISOString();
+      }
+    }
+  }
+
+  /**
+   * Dry-run validate a workflow definition before execution.
+   */
+  async dryRun(workflow: WorkflowDefinition): Promise<WorkflowDryRunResult> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const steps: WorkflowDryRunStep[] = [];
+
+    if (!workflow.steps || workflow.steps.length === 0) {
+      errors.push('Workflow has no steps defined');
+      return { valid: false, errors, warnings, steps };
+    }
+
+    const seenStepIds = new Set<string>();
+
+    for (const step of workflow.steps) {
+      if (!step.id) {
+        errors.push('Workflow step is missing an "id"');
+        continue;
+      }
+      if (seenStepIds.has(step.id)) {
+        errors.push(`Duplicate step ID "${step.id}"`);
+      }
+      seenStepIds.add(step.id);
+
+      if (step.dependsOn) {
+        for (const depId of step.dependsOn) {
+          if (!seenStepIds.has(depId)) {
+            errors.push(`Step "${step.id}" depends on step "${depId}" which has not been declared before it`);
+          }
+        }
+      }
+
+      const missingCredentials: string[] = [];
+      let permLevel: PermissionLevel = 'read';
+      let requiresApproval = false;
+      let approvalReason: string | undefined;
+      let isNonIdempotent = false;
+
+      if (step.bridge.startsWith('mcp:')) {
+        const serverId = step.bridge.slice(4);
+        const server = this.mcpManager?.getServer(serverId);
+        if (!server) {
+          warnings.push(`MCP server "${serverId}" not currently loaded in McpManager`);
+        } else {
+          const tool = server.tools.find(t => t.name === step.action);
+          if (!tool) {
+            errors.push(`MCP tool "${step.action}" not found on server "${serverId}"`);
+          } else {
+            permLevel = tool.permissionLevel;
+            requiresApproval = tool.requiresApproval ?? false;
+            approvalReason = requiresApproval ? `MCP tool "${step.action}" requires approval` : undefined;
+            isNonIdempotent = tool.sideEffects === true || permLevel === 'external-write' || permLevel === 'publish' || permLevel === 'destructive';
+          }
+        }
+      } else {
+        const bridge = this.registry.getBridge(step.bridge);
+        if (!bridge) {
+          errors.push(`Native bridge "${step.bridge}" not found in registry`);
+        } else {
+          const cap = bridge.manifest.capabilities.find(c => c.action === step.action);
+          if (!cap) {
+            errors.push(`Action "${step.action}" not found in bridge "${step.bridge}"`);
+          } else {
+            permLevel = cap.permissionLevel;
+            const permRule = this.permissions.checkPermission(bridge.manifest, step.action, step.inputs);
+            requiresApproval = permRule.requiresApproval;
+            approvalReason = permRule.reason;
+            isNonIdempotent = cap.sideEffects === true || permLevel === 'external-write' || permLevel === 'publish' || permLevel === 'destructive';
+          }
+
+          if (bridge.manifest.auth) {
+            for (const authReq of bridge.manifest.auth) {
+              if (authReq.envVar && authReq.required && !process.env[authReq.envVar]) {
+                missingCredentials.push(authReq.envVar);
+              }
+            }
+          }
+          if (bridge.manifest.integrations) {
+            for (const req of bridge.manifest.integrations) {
+              if (req.check.type === 'env-var' && req.required && !process.env[req.check.value]) {
+                if (!missingCredentials.includes(req.check.value)) {
+                  missingCredentials.push(req.check.value);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      steps.push({
+        stepId: step.id,
+        name: step.name || step.id,
+        bridge: step.bridge,
+        action: step.action,
+        permissionLevel: permLevel,
+        requiresApproval,
+        approvalReason,
+        missingCredentials,
+        isNonIdempotent,
+        timeoutMs: step.timeoutMs || 30000,
+        condition: step.condition,
+        cleanup: step.cleanup,
+      });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      steps,
+    };
   }
 
   /**
@@ -761,6 +1235,7 @@ export class WorkflowEngine {
       'failed': '❌',
       'skipped': '⏭',
       'cancelled': '⏹',
+      'needs_reconciliation': '⚠️',
     };
     return icons[status] ?? '?';
   }
