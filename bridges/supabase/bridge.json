@@ -1,0 +1,96 @@
+{
+  "schema": "1.0",
+  "name": "supabase",
+  "displayName": "Supabase Backend Cloud",
+  "version": "1.0.0",
+  "description": "Comprehensive Supabase backend integration: database queries, Auth identity management, S3-compatible Storage, and Edge Functions.",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "query-table",
+      "description": "Query records from a Supabase Postgres table with filtering, sorting, and pagination.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "insert-record",
+      "description": "Insert a new row or batch of rows into a Supabase table.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "update-record",
+      "description": "Update existing records in a Supabase table matching query conditions.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-record",
+      "description": "Delete records from a Supabase table matching specific conditions.",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "rpc-function",
+      "description": "Execute a PostgreSQL stored procedure / RPC function on Supabase.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-buckets",
+      "description": "List all Supabase Storage buckets and public access policies.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "upload-file",
+      "description": "Upload a file or object into a Supabase Storage bucket.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-auth-users",
+      "description": "List registered users and authentication identities via Supabase Admin API.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "invoke-edge-function",
+      "description": "Trigger a serverless Supabase Edge Function with custom JSON body.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "inspect-schema",
+      "description": "List public tables, views, and schema definitions in the Supabase database.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "auth": [
+    {
+      "name": "supabase-key",
+      "type": "api-key",
+      "description": "Supabase Service Role Key or Anon Key",
+      "required": false
+    }
+  ],
+  "integrations": [],
+  "permissions": [
+    {
+      "actions": "query-table|list-buckets|list-auth-users|inspect-schema",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "insert-record|update-record|rpc-function|upload-file|invoke-edge-function",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "delete-record",
+      "level": "destructive",
+      "requiresApproval": true
+    }
+  ]
+}

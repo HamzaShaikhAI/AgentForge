@@ -102,6 +102,38 @@ describe('AgentForge Auth CLI', () => {
     expect(output).toContain('disconnected successfully');
   });
 
+  it('handles "auth configure-linkedin" and saves config', async () => {
+    // Missing --client-id
+    const badCode = await runCli(['auth', 'configure-linkedin']);
+    expect(badCode).toBe(1);
+    expect(errorSpy.mock.calls.map(c => c.join(' ')).join('\n')).toContain('Missing required argument: --client-id');
+
+    // Valid configuration
+    const goodCode = await runCli(['auth', 'configure-linkedin', '--client-id', 'test-li-id', '--client-secret', 'test-li-sec']);
+    expect(goodCode).toBe(0);
+    const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+    expect(output).toContain('LinkedIn OAuth client credentials saved successfully');
+
+    // Reset configuration
+    const resetCode = await runCli(['auth', 'configure-linkedin', '--reset']);
+    expect(resetCode).toBe(0);
+  });
+
+  it('exits with error and explains setup when running "auth linkedin" without credentials', async () => {
+    const exitCode = await runCli(['auth', 'linkedin']);
+    expect(exitCode).toBe(1);
+    const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+    expect(output).toContain('LinkedIn OAuth App credentials not found');
+    expect(output).toContain('http://localhost:43110/callback');
+  });
+
+  it('handles "auth logout linkedin"', async () => {
+    const exitCode = await runCli(['auth', 'logout', 'linkedin']);
+    expect(exitCode).toBe(0);
+    const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+    expect(output).toContain('LinkedIn account disconnected successfully');
+  });
+
   it('rejects unknown commands', async () => {
     const exitCode = await runCli(['unknown-command']);
     expect(exitCode).toBe(1);

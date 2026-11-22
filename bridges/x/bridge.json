@@ -1,0 +1,320 @@
+{
+  "schema": "1.0",
+  "name": "x",
+  "displayName": "X (Twitter)",
+  "description": "X (Twitter) API v2 integration: view tweets, search & research topics, view feed/videos, follow users, like/retweet, draft local previews, upload media, and post tweets with strict approval gates.",
+  "version": "1.0.0",
+  "author": "AgentForge",
+  "category": "social-media",
+  "capabilities": [
+    {
+      "action": "me",
+      "description": "Fetch authenticated user identity and profile details via /2/users/me",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "id", "type": "string", "description": "X User ID" },
+        { "name": "name", "type": "string", "description": "User display name" },
+        { "name": "username", "type": "string", "description": "User handle (without @)" },
+        { "name": "description", "type": "string", "description": "User profile bio" },
+        { "name": "profile_image_url", "type": "string", "description": "Profile avatar image URL" },
+        { "name": "public_metrics", "type": "object", "description": "Followers, following, tweet counts" },
+        { "name": "verified", "type": "boolean", "description": "Verification status" },
+        { "name": "verified_type", "type": "string", "description": "Verification badge type" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response status code" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 timestamp" }
+      ]
+    },
+    {
+      "action": "get-user",
+      "description": "Look up any public user profile by username or ID via /2/users",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "username", "type": "string", "description": "User handle (e.g. elonmusk, without @)", "required": false },
+        { "name": "userId", "type": "string", "description": "User numeric ID", "required": false }
+      ],
+      "outputs": [
+        { "name": "id", "type": "string", "description": "User numeric ID" },
+        { "name": "name", "type": "string", "description": "Display name" },
+        { "name": "username", "type": "string", "description": "Handle name" },
+        { "name": "description", "type": "string", "description": "Profile biography" },
+        { "name": "public_metrics", "type": "object", "description": "Follower and tweet metrics" },
+        { "name": "verified", "type": "boolean", "description": "Whether user is verified" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    },
+    {
+      "action": "get-tweet",
+      "description": "Inspect full details of a specific tweet by ID including text, metrics, author, and attached video/image media",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "tweetId", "type": "string", "description": "Numeric Tweet ID", "required": true }
+      ],
+      "outputs": [
+        { "name": "id", "type": "string", "description": "Tweet ID" },
+        { "name": "text", "type": "string", "description": "Tweet text content" },
+        { "name": "authorId", "type": "string", "description": "Author numeric ID" },
+        { "name": "authorUsername", "type": "string", "description": "Author handle if expanded" },
+        { "name": "createdAt", "type": "string", "description": "ISO 8601 creation timestamp" },
+        { "name": "public_metrics", "type": "object", "description": "Retweets, replies, likes, quotes, impressions" },
+        { "name": "media", "type": "array", "description": "Attached images, videos, and preview URLs" },
+        { "name": "tweetUrl", "type": "string", "description": "Direct URL to tweet on X" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response code" }
+      ]
+    },
+    {
+      "action": "search-tweets",
+      "description": "Search recent tweets on X for keywords, hashtags, or topics with media, videos, and metrics for AI research",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "query", "type": "string", "description": "Search query (e.g. 'artificial intelligence has:media -is:retweet')", "required": true },
+        { "name": "maxResults", "type": "number", "description": "Maximum tweets to return (10 to 100, default 10)", "required": false, "default": 10 }
+      ],
+      "outputs": [
+        { "name": "tweets", "type": "array", "description": "List of matching tweets with metrics and media" },
+        { "name": "resultCount", "type": "number", "description": "Total tweets returned" },
+        { "name": "query", "type": "string", "description": "Executed search query" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    },
+    {
+      "action": "get-timeline",
+      "description": "Read the recent home feed or user timeline of tweets",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "userId", "type": "string", "description": "Optional user ID (defaults to authenticated user)", "required": false },
+        { "name": "maxResults", "type": "number", "description": "Number of tweets (5 to 100, default 10)", "required": false, "default": 10 }
+      ],
+      "outputs": [
+        { "name": "tweets", "type": "array", "description": "List of timeline tweets" },
+        { "name": "count", "type": "number", "description": "Number of tweets retrieved" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    },
+    {
+      "action": "get-mentions",
+      "description": "Read recent tweets mentioning the authenticated user",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "maxResults", "type": "number", "description": "Number of mentions (5 to 100, default 10)", "required": false, "default": 10 }
+      ],
+      "outputs": [
+        { "name": "mentions", "type": "array", "description": "List of mention tweets" },
+        { "name": "count", "type": "number", "description": "Number of mentions retrieved" }
+      ]
+    },
+    {
+      "action": "draft-tweet",
+      "description": "Format and validate a tweet locally (character count, poll options, media attachments) and save preview JSON",
+      "permissionLevel": "local-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "text", "type": "string", "description": "Tweet text (1 to 280 characters for standard accounts)", "required": true },
+        { "name": "inReplyToTweetId", "type": "string", "description": "Optional tweet ID to reply to", "required": false },
+        { "name": "mediaIds", "type": "array", "description": "Optional array of media IDs", "required": false },
+        { "name": "poll", "type": "object", "description": "Optional interactive poll ({ options, durationMinutes })", "required": false },
+        { "name": "outputPath", "type": "string", "description": "Optional path to save JSON preview", "required": false }
+      ],
+      "outputs": [
+        { "name": "draftPath", "type": "string", "description": "Path to saved preview JSON" },
+        { "name": "characterCount", "type": "number", "description": "Text character length" },
+        { "name": "payload", "type": "object", "description": "Validated request payload for /2/tweets" },
+        { "name": "saved", "type": "boolean", "description": "Whether draft was saved locally" }
+      ]
+    },
+    {
+      "action": "like-tweet",
+      "description": "Like a tweet on X via /2/users/:id/likes",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "tweetId", "type": "string", "description": "Tweet ID to like", "required": true }
+      ],
+      "outputs": [
+        { "name": "liked", "type": "boolean", "description": "Whether like succeeded" },
+        { "name": "tweetId", "type": "string", "description": "Liked tweet ID" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response code" }
+      ]
+    },
+    {
+      "action": "unlike-tweet",
+      "description": "Unlike a tweet on X via /2/users/:id/likes/:tweet_id",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "tweetId", "type": "string", "description": "Tweet ID to unlike", "required": true }
+      ],
+      "outputs": [
+        { "name": "unliked", "type": "boolean", "description": "Whether unlike succeeded" },
+        { "name": "tweetId", "type": "string", "description": "Tweet ID" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response code" }
+      ]
+    },
+    {
+      "action": "retweet",
+      "description": "Retweet / Repost a tweet to your followers via /2/users/:id/retweets",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "tweetId", "type": "string", "description": "Tweet ID to retweet", "required": true }
+      ],
+      "outputs": [
+        { "name": "retweeted", "type": "boolean", "description": "Whether retweet succeeded" },
+        { "name": "tweetId", "type": "string", "description": "Tweet ID" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    },
+    {
+      "action": "follow-user",
+      "description": "Follow an X user by handle or user ID via /2/users/:id/following",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "targetUserId", "type": "string", "description": "Numeric user ID to follow", "required": false },
+        { "name": "targetUsername", "type": "string", "description": "Handle to follow (without @)", "required": false }
+      ],
+      "outputs": [
+        { "name": "following", "type": "boolean", "description": "Whether follow succeeded" },
+        { "name": "targetUserId", "type": "string", "description": "Followed user ID" },
+        { "name": "pendingFollow", "type": "boolean", "description": "Whether follow is pending approval" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response code" }
+      ]
+    },
+    {
+      "action": "unfollow-user",
+      "description": "Unfollow an X user via /2/users/:id/following/:target_user_id",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "targetUserId", "type": "string", "description": "Numeric user ID to unfollow", "required": true }
+      ],
+      "outputs": [
+        { "name": "unfollowed", "type": "boolean", "description": "Whether unfollow succeeded" },
+        { "name": "targetUserId", "type": "string", "description": "Unfollowed user ID" }
+      ]
+    },
+    {
+      "action": "upload-media",
+      "description": "Upload a local image, GIF, or video file to X and retrieve a media ID for attaching to tweets",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "filePath", "type": "string", "description": "Local path to PNG, JPG, GIF, or MP4 video file", "required": true },
+        { "name": "mediaCategory", "type": "string", "description": "Media category: tweet_image, tweet_gif, tweet_video", "required": false, "default": "tweet_image" },
+        { "name": "altText", "type": "string", "description": "Accessible alt text description", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether media upload succeeded" },
+        { "name": "mediaId", "type": "string", "description": "Uploaded media ID string" },
+        { "name": "mimeType", "type": "string", "description": "MIME type" },
+        { "name": "bytesUploaded", "type": "number", "description": "Total bytes uploaded" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    },
+    {
+      "action": "post-tweet",
+      "description": "Publish a live tweet to X via REST /2/tweets with text, media attachments, poll, or reply",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "text", "type": "string", "description": "Tweet content text", "required": true },
+        { "name": "mediaIds", "type": "array", "description": "Array of media IDs from upload-media", "required": false },
+        { "name": "inReplyToTweetId", "type": "string", "description": "Optional Tweet ID to reply to", "required": false },
+        { "name": "poll", "type": "object", "description": "Optional poll object ({ options, durationMinutes })", "required": false }
+      ],
+      "outputs": [
+        { "name": "published", "type": "boolean", "description": "Whether tweet was created on X" },
+        { "name": "tweetId", "type": "string", "description": "Created Tweet ID" },
+        { "name": "tweetUrl", "type": "string", "description": "Direct URL to tweet" },
+        { "name": "text", "type": "string", "description": "Confirmed tweet text" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 publication timestamp" }
+      ]
+    },
+    {
+      "action": "delete-tweet",
+      "description": "Delete a tweet created by the authenticated user by ID via DELETE /2/tweets/:id",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "tweetId", "type": "string", "description": "Tweet ID to delete", "required": true }
+      ],
+      "outputs": [
+        { "name": "deleted", "type": "boolean", "description": "Whether deletion succeeded" },
+        { "name": "tweetId", "type": "string", "description": "Deleted tweet ID" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status code" }
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "name": "x-access-token",
+      "check": { "type": "env-var", "value": "X_ACCESS_TOKEN" },
+      "required": true,
+      "setupInstructions": "Set X_ACCESS_TOKEN to an active OAuth 2.0 Bearer token or authenticate via AgentForge Web Manager."
+    }
+  ],
+  "auth": [
+    {
+      "name": "x-access-token",
+      "type": "env-var",
+      "envVar": "X_ACCESS_TOKEN",
+      "description": "X OAuth 2.0 Bearer access token injected at runtime (never stored in manifests or logs)",
+      "required": true,
+      "scopes": [
+        "tweet.read",
+        "tweet.write",
+        "users.read",
+        "follows.read",
+        "follows.write",
+        "like.read",
+        "like.write",
+        "offline.access"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "me,get-user,get-tweet,search-tweets,get-timeline,get-mentions",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "draft-tweet",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "like-tweet,unlike-tweet,retweet,follow-user,unfollow-user,upload-media",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "External interaction on X (liking, following, or uploading media). Requires operator review."
+    },
+    {
+      "actions": "post-tweet,delete-tweet",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "Publishes a live public tweet or deletes content on X. Strict operator sign-off required."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["windows", "macos", "linux"]
+  },
+  "test": {
+    "smokeTest": "me",
+    "verificationSteps": [
+      "Set X_ACCESS_TOKEN environment variable or login via 1-click Chrome OAuth",
+      "Run 'me' action to verify authentication and fetch user handle",
+      "Run 'search-tweets' with query 'AI' to verify research capability",
+      "Run 'draft-tweet' to validate tweet length and offline preview generation",
+      "Approve and execute 'post-tweet' or 'like-tweet' with explicit human-in-the-loop sign-off"
+    ]
+  },
+  "tags": ["x", "twitter", "social-media", "tweets", "research", "feed", "videos", "publishing", "api-v2"]
+}

@@ -11,20 +11,32 @@ coverage/
 !.env.example
 *.local
 
-# Google OAuth & local credential files (never commit real credentials)
+# OAuth, API Keys, Bridge Sessions & local credential files (never commit real credentials)
 publisher-client.json
 publisher.config.json
 google-client.json
+linkedin-client.json
+x-developer-config.json
+*-client.json
+*-developer-config.json
 client_secret*.json
 credentials.json
 *.dat
 *.enc
+*.key
+*.pem
+*.session
+*.token
 .agentforge/
 .credentials/
+*auth_state*.json
+chrome-flow-profile/
+google-flow-profile/
 
 # Safe example templates preserved
 !publisher-client.example.json
 !google-client.example.json
+!*-client.example.json
 
 # Runtime data & logs
 runs/
@@ -32,6 +44,18 @@ runs/
 logs/
 data/
 !data/.gitkeep
+
+# Media & Generated Downloads (never commit user-generated video/audio)
+downloads/
+tweet-draft-*.json
+*.mp4
+*.mp3
+*.wav
+*.m4a
+
+# Python cache
+__pycache__/
+*.pyc
 
 # IDE & OS files
 .vscode/

@@ -316,6 +316,8 @@ export interface WorkflowRun {
   pendingApproval?: ApprovalCheckpoint;
   /** Active reconciliation context if paused due to ambiguous outcome */
   reconciliation?: ReconciliationContext;
+  /** If true, auto-approves all subsequent pending approval checkpoints in this run */
+  autoApproveAll?: boolean;
 }
 
 // ─── Capability Truth Engine Types ──────────────────────────────────

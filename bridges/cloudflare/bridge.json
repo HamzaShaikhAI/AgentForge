@@ -2,36 +2,343 @@
   "schema": "1.0",
   "name": "cloudflare",
   "displayName": "Cloudflare",
-  "description": "Cloudflare DNS zones and Workers inspection.",
+  "description": "Cloudflare omni-control: DNS zones & records, Workers, Pages, KV namespaces, D1 SQL, R2 object storage, WAF rules, IP access, SSL/TLS, cache purging, and universal REST API v4 dispatching.",
   "version": "1.0.0",
   "category": "cloud-services",
   "capabilities": [
     {
       "action": "list-zones",
-      "description": "List domain zones",
+      "description": "List all domain zones in Cloudflare account",
       "permissionLevel": "read",
       "sideEffects": false
     },
     {
-      "action": "get-dns-records",
-      "description": "List DNS records for zone",
+      "action": "get-zone-details",
+      "description": "Get detailed zone status, plan, nameservers, and configuration",
       "permissionLevel": "read",
       "sideEffects": false
+    },
+    {
+      "action": "create-zone",
+      "description": "Add and provision a new domain zone in Cloudflare",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-zone",
+      "description": "Permanently remove a domain zone from Cloudflare",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "get-zone-settings",
+      "description": "Inspect SSL/TLS, Minify, IPv6, Early Hints, and security level settings",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "update-zone-settings",
+      "description": "Modify zone-level security, SSL, or performance parameters",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-dns-records",
+      "description": "List DNS records for a zone with optional type/name filtering",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-dns-record",
+      "description": "Retrieve specific DNS record metadata and content",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-dns-record",
+      "description": "Create a new DNS record (A, AAAA, CNAME, TXT, MX, etc.)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "update-dns-record",
+      "description": "Modify existing DNS record target, TTL, or proxy status",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-dns-record",
+      "description": "Delete a DNS record from the zone",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "export-dns-records",
+      "description": "Export zone records in standard BIND format",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "import-dns-records",
+      "description": "Import zone records from BIND format file",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-dnssec-status",
+      "description": "Inspect DNSSEC signing status and DS record digests",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "toggle-dnssec",
+      "description": "Enable or disable DNSSEC cryptographic signing",
+      "permissionLevel": "external-write",
+      "sideEffects": true
     },
     {
       "action": "list-workers",
-      "description": "List deployed Cloudflare Workers",
+      "description": "List all deployed Cloudflare Workers scripts",
       "permissionLevel": "read",
       "sideEffects": false
+    },
+    {
+      "action": "get-worker-details",
+      "description": "Inspect worker script code, bindings, and environment variables",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "upload-worker",
+      "description": "Deploy or update a serverless Cloudflare Worker script",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-worker",
+      "description": "Undeploy and delete a Cloudflare Worker script",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-worker-routes",
+      "description": "List URL routes and custom domains bound to workers",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-worker-route",
+      "description": "Bind a worker script to an HTTP route pattern",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-worker-route",
+      "description": "Remove an HTTP route binding from a worker",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-pages-projects",
+      "description": "List Cloudflare Pages frontend projects and production domains",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-pages-deployment",
+      "description": "Trigger a Cloudflare Pages deployment or upload direct bundle",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "list-kv-namespaces",
+      "description": "List Workers KV storage namespaces in the account",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-kv-namespace",
+      "description": "Create a new Workers KV storage namespace",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-kv-keys",
+      "description": "List keys within a KV namespace with optional prefix filter",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-kv-value",
+      "description": "Read the value and metadata of a KV storage key",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "put-kv-value",
+      "description": "Write a key-value pair to Workers KV with optional TTL",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-kv-value",
+      "description": "Remove a key-value entry from Workers KV",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-d1-databases",
+      "description": "List serverless Cloudflare D1 SQL databases",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-d1-database",
+      "description": "Create a new serverless Cloudflare D1 SQL database",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "execute-d1-query",
+      "description": "Execute arbitrary SQL query on a Cloudflare D1 database",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-r2-buckets",
+      "description": "List Cloudflare R2 zero-egress object storage buckets",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-r2-bucket",
+      "description": "Create a new Cloudflare R2 object storage bucket",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-r2-object-metadata",
+      "description": "Inspect object headers, ETag, and size in an R2 bucket",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-waf-rules",
+      "description": "List active Web Application Firewall custom rules and rate limits",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-firewall-rule",
+      "description": "Deploy a WAF rule with filter expression and action (block/challenge/allow)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-firewall-rule",
+      "description": "Remove a WAF firewall rule from the zone",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-ip-access-rules",
+      "description": "List IP whitelist/blacklist access rules across zone or account",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-ip-access-rule",
+      "description": "Add an IP or CIDR range to access rules (whitelist/block/challenge)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-ip-access-rule",
+      "description": "Remove an IP access rule",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "get-security-analytics",
+      "description": "Retrieve threat volume, blocked queries, and security metrics",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-ssl-settings",
+      "description": "Inspect SSL/TLS encryption mode (Flexible, Full, Strict) and certificates",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "update-ssl-settings",
+      "description": "Configure SSL/TLS encryption mode and Universal SSL provisioning",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "purge-cache",
+      "description": "Purge edge cache completely or selectively by URL, tag, or prefix",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-cache-analytics",
+      "description": "Retrieve cache hit ratio, bandwidth savings, and edge request statistics",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "toggle-development-mode",
+      "description": "Enable or disable Development Mode to temporarily bypass edge cache",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "cloudflare-raw-api",
+      "description": "Universal Cloudflare REST API v4 dispatcher for arbitrary endpoint execution",
+      "permissionLevel": "external-write",
+      "sideEffects": true
     }
   ],
-  "integrations": [],
-  "auth": [],
+  "integrations": [
+    {
+      "name": "cloudflare-api",
+      "required": false,
+      "check": {
+        "type": "env-var",
+        "value": "CLOUDFLARE_API_TOKEN"
+      }
+    }
+  ],
+  "auth": [
+    {
+      "name": "cloudflare-token",
+      "type": "api-key",
+      "description": "Cloudflare API Token or Global API Key with account permissions",
+      "required": false
+    }
+  ],
   "permissions": [
     {
-      "actions": "list-zones|get-dns-records|list-workers",
+      "actions": "list-zones|get-zone-details|get-zone-settings|list-dns-records|get-dns-record|export-dns-records|get-dnssec-status|list-workers|get-worker-details|list-worker-routes|list-pages-projects|list-kv-namespaces|list-kv-keys|get-kv-value|list-d1-databases|list-r2-buckets|get-r2-object-metadata|list-waf-rules|list-ip-access-rules|get-security-analytics|get-ssl-settings|get-cache-analytics",
       "level": "read",
       "requiresApproval": false
+    },
+    {
+      "actions": "create-zone|update-zone-settings|create-dns-record|update-dns-record|import-dns-records|toggle-dnssec|create-worker-route|create-kv-namespace|put-kv-value|create-d1-database|execute-d1-query|create-r2-bucket|create-firewall-rule|create-ip-access-rule|update-ssl-settings|purge-cache|toggle-development-mode|cloudflare-raw-api",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "upload-worker|create-pages-deployment",
+      "level": "publish",
+      "requiresApproval": true
+    },
+    {
+      "actions": "delete-zone|delete-dns-record|delete-worker|delete-worker-route|delete-kv-value|delete-firewall-rule|delete-ip-access-rule",
+      "level": "destructive",
+      "requiresApproval": true
     }
   ]
 }

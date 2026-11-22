@@ -123,6 +123,8 @@ export class AgentForgeMcpServer {
                       bridge: { type: 'string', description: 'Bridge name (e.g. "github", "example-echo")' },
                       action: { type: 'string', description: 'Action name (e.g. "status-check", "repo-info")' },
                       inputs: { type: 'object', description: 'Input parameters for the action' },
+                      confirmed: { type: 'boolean', description: 'Explicit user confirmation to proceed with external-write, publish, or destructive operations' },
+                      approvalReason: { type: 'string', description: 'Optional reason or audit justification for approval' },
                     },
                     required: ['bridge', 'action'],
                   },
@@ -315,6 +317,22 @@ export class AgentForgeMcpServer {
               ? 'Connected to Google, but YouTube read-only scope not granted. Run "agentforge auth youtube".'
               : `Connected via Google Account (${googleStatus.connectedAccount}) with YouTube read-only scope.`,
           },
+          linkedin: {
+            available: Boolean(process.env.LINKEDIN_ACCESS_TOKEN?.trim() && process.env.LINKEDIN_PERSON_URN?.trim()),
+            hasAccessToken: Boolean(process.env.LINKEDIN_ACCESS_TOKEN?.trim()),
+            hasPersonUrn: Boolean(process.env.LINKEDIN_PERSON_URN?.trim()),
+            note: Boolean(process.env.LINKEDIN_ACCESS_TOKEN?.trim() && process.env.LINKEDIN_PERSON_URN?.trim())
+              ? 'Configured via LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN.'
+              : 'Set LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN environment variables to enable LinkedIn API actions.',
+          },
+          x: {
+            available: Boolean((process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN)?.trim()),
+            hasAccessToken: Boolean((process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN)?.trim()),
+            hasUserId: Boolean(process.env.X_USER_ID?.trim()),
+            note: Boolean((process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN)?.trim())
+              ? 'Configured via X_ACCESS_TOKEN.'
+              : 'Set X_ACCESS_TOKEN environment variable or login via AgentForge Web Manager to enable X API actions.',
+          },
         };
       }
 
@@ -332,6 +350,20 @@ export class AgentForgeMcpServer {
         const bridge = this.registry.get(bridgeName);
         if (!bridge) {
           throw new Error(`Bridge "${bridgeName}" not found in registry`);
+        }
+
+        // Record human-in-the-loop approval if explicitly confirmed
+        if (args.confirmed === true || args.approved === true) {
+          const cap = bridge.manifest.capabilities.find(c => c.action === action);
+          const level = cap?.permissionLevel || 'external-write';
+          this.permissions.recordApproval(
+            bridgeName,
+            action,
+            level,
+            'user',
+            String(args.approvalReason || 'Explicit user approval provided'),
+            inputs,
+          );
         }
 
         // Permission check

@@ -1,0 +1,353 @@
+{
+  "schema": "1.0",
+  "name": "northwest",
+  "displayName": "Northwest Registered Agent",
+  "description": "Northwest Registered Agent omni-control integration: manage domains, DNS routing, registrar lock, WHOIS privacy, auto-renewal, custom nameservers, email forwarding, URL redirects, SSL certificates, corporate compliance, and autonomous AI website deployments for Antigravity & AgentRouter.",
+  "version": "1.1.0",
+  "author": "AgentForge",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "get-domain",
+      "description": "Retrieve comprehensive domain settings, expiration, SSL status, and registrar lock for a registered domain",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name (e.g. 'hamzashaikhai.com')", "required": false, "default": "hamzashaikhai.com" }
+      ],
+      "outputs": [
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "domainStatus", "type": "string", "description": "Domain status (e.g. 'Active')" },
+        { "name": "planStatus", "type": "string", "description": "Domain plan status (e.g. 'Active')" },
+        { "name": "registeredOn", "type": "string", "description": "Registration date" },
+        { "name": "expirationDate", "type": "string", "description": "Expiration date" },
+        { "name": "daysRemaining", "type": "number", "description": "Remaining registration days" },
+        { "name": "ipAddress", "type": "string", "description": "Assigned IP address mode" },
+        { "name": "ssl", "type": "string", "description": "SSL certificate status" },
+        { "name": "registrarLock", "type": "boolean", "description": "Whether registrar transfer lock is active" },
+        { "name": "privacyProtection", "type": "boolean", "description": "Whether WHOIS privacy protection is enabled" },
+        { "name": "autoRenew", "type": "boolean", "description": "Whether auto-renewal is enabled" },
+        { "name": "domainParking", "type": "boolean", "description": "Whether domain parking is enabled" },
+        { "name": "dnsRecordsCount", "type": "number", "description": "Number of configured DNS records" }
+      ]
+    },
+    {
+      "action": "list-domains",
+      "description": "List all active domains managed in the Northwest Registered Agent portfolio",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "domains", "type": "array", "description": "List of domains with status and expiration" },
+        { "name": "totalCount", "type": "number", "description": "Total registered domains count" }
+      ]
+    },
+    {
+      "action": "get-dns-records",
+      "description": "List all active DNS zone records (A, AAAA, CNAME, TXT, MX, NS) configured for a domain",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" }
+      ],
+      "outputs": [
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "records", "type": "array", "description": "Active DNS records list" },
+        { "name": "totalRecords", "type": "number", "description": "Count of DNS records" }
+      ]
+    },
+    {
+      "action": "add-dns-record",
+      "description": "Add a new DNS record (A, CNAME, TXT, MX) to point domain to web hosting or verify ownership",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "type", "type": "string", "description": "Record type: 'A', 'AAAA', 'CNAME', 'TXT', 'MX', or 'NS'", "required": true },
+        { "name": "name", "type": "string", "description": "Host/subdomain name (e.g. '@', 'www', 'api', '_verify')", "required": true },
+        { "name": "value", "type": "string", "description": "IP address or target host/value", "required": true },
+        { "name": "ttl", "type": "number", "description": "Time to live in seconds (default 3600)", "required": false, "default": 3600 },
+        { "name": "priority", "type": "number", "description": "Priority for MX records", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether record was created" },
+        { "name": "record", "type": "object", "description": "Created DNS record with unique ID" }
+      ]
+    },
+    {
+      "action": "update-dns-record",
+      "description": "Update value, TTL, or priority for an existing DNS zone record",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "recordId", "type": "string", "description": "Unique ID of the DNS record to update", "required": true },
+        { "name": "value", "type": "string", "description": "Updated target IP or host", "required": false },
+        { "name": "ttl", "type": "number", "description": "Updated TTL in seconds", "required": false },
+        { "name": "priority", "type": "number", "description": "Updated priority for MX", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether record was updated" },
+        { "name": "record", "type": "object", "description": "Updated DNS record" }
+      ]
+    },
+    {
+      "action": "delete-dns-record",
+      "description": "Delete a DNS record from the Northwest domain zone. Requires operator confirmation.",
+      "permissionLevel": "destructive",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "recordId", "type": "string", "description": "Unique ID of the record to remove", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether record was deleted" },
+        { "name": "recordId", "type": "string", "description": "Deleted record ID" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "link-website-hosting",
+      "description": "Automatically configure DNS records to route domain traffic to Vercel, Netlify, Cloudflare, or a custom host IP",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "provider", "type": "string", "description": "Hosting provider: 'vercel', 'netlify', 'cloudflare', or 'custom'", "required": false, "default": "vercel" },
+        { "name": "targetHostOrIp", "type": "string", "description": "Target server IP (e.g. '76.76.21.21') or CNAME alias", "required": false },
+        { "name": "includeWww", "type": "boolean", "description": "Whether to also route www subdomain", "required": false, "default": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether website hosting was routed" },
+        { "name": "domain", "type": "string", "description": "Connected domain" },
+        { "name": "provider", "type": "string", "description": "Configured provider" },
+        { "name": "recordsConfigured", "type": "array", "description": "List of configured DNS routing records" },
+        { "name": "liveUrl", "type": "string", "description": "Live website URL (https://domain)" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "check-domain-availability",
+      "description": "Check whether a domain name is available for registration via Northwest",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Domain name to check", "required": true }
+      ],
+      "outputs": [
+        { "name": "domain", "type": "string", "description": "Queried domain" },
+        { "name": "available", "type": "boolean", "description": "Whether domain is available" },
+        { "name": "currency", "type": "string", "description": "Price currency (e.g. USD)" },
+        { "name": "annualPrice", "type": "number", "description": "Annual renewal/registration price" }
+      ]
+    },
+    {
+      "action": "set-registrar-lock",
+      "description": "Lock or unlock the domain to prevent unauthorized registrar transfers",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "locked", "type": "boolean", "description": "Whether registrar lock should be enabled (true) or disabled (false)", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether lock was updated" },
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "registrarLock", "type": "boolean", "description": "New registrar lock status" },
+        { "name": "message", "type": "string", "description": "Confirmation message" }
+      ]
+    },
+    {
+      "action": "set-privacy-protection",
+      "description": "Enable or disable WHOIS privacy protection to hide personal registrant details",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "enabled", "type": "boolean", "description": "Whether privacy protection should be active", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether privacy was updated" },
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "privacyProtection", "type": "boolean", "description": "New privacy status" },
+        { "name": "message", "type": "string", "description": "Confirmation message" }
+      ]
+    },
+    {
+      "action": "set-auto-renew",
+      "description": "Toggle automatic domain renewal to protect domain ownership from accidental expiration",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "enabled", "type": "boolean", "description": "Whether auto-renew should be active", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether auto-renew was updated" },
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "autoRenew", "type": "boolean", "description": "New auto-renew status" }
+      ]
+    },
+    {
+      "action": "set-nameservers",
+      "description": "Configure custom or default authoritative nameservers for the domain",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "nameservers", "type": "array", "description": "List of authoritative nameservers (e.g. ['ns1.northwestregisteredagent.com', 'ns2.northwestregisteredagent.com'] or Cloudflare NS)", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether nameservers were updated" },
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "nameservers", "type": "array", "description": "Configured nameservers" }
+      ]
+    },
+    {
+      "action": "set-url-forwarding",
+      "description": "Configure URL redirect forwarding from domain to any external website with 301/302 status",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Source domain", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "targetUrl", "type": "string", "description": "Destination URL (e.g. 'https://my-app.vercel.app')", "required": true },
+        { "name": "redirectType", "type": "string", "description": "'301' (permanent) or '302' (temporary)", "required": false, "default": "301" },
+        { "name": "includePath", "type": "boolean", "description": "Preserve URI path forwarding", "required": false, "default": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether URL forwarding was enabled" },
+        { "name": "domain", "type": "string", "description": "Source domain" },
+        { "name": "targetUrl", "type": "string", "description": "Destination URL" }
+      ]
+    },
+    {
+      "action": "configure-email-forwarding",
+      "description": "Configure domain email alias forwarder to route incoming mail to personal or business inbox",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "alias", "type": "string", "description": "Email alias (e.g. 'contact', 'hello', or '*' for catch-all)", "required": true },
+        { "name": "destinationEmail", "type": "string", "description": "Forwarding destination email address (e.g. 'indefect397@gmail.com')", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether email forwarder was created" },
+        { "name": "fromEmail", "type": "string", "description": "Configured source address" },
+        { "name": "destinationEmail", "type": "string", "description": "Destination address" }
+      ]
+    },
+    {
+      "action": "manage-ssl",
+      "description": "Manage SSL certificate status, enforce HTTPS redirect, or trigger certificate renewal",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain name", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "action", "type": "string", "description": "'status', 'enforce-https', 'reissue'", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether SSL action completed" },
+        { "name": "domain", "type": "string", "description": "Domain name" },
+        { "name": "sslStatus", "type": "string", "description": "Current SSL status" },
+        { "name": "enforceHttps", "type": "boolean", "description": "Whether HTTPS is enforced" }
+      ]
+    },
+    {
+      "action": "get-compliance-status",
+      "description": "Retrieve corporate registered agent status, annual report deadlines, and good standing",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "entityName", "type": "string", "description": "Business or entity name", "required": false, "default": "Hamza Shaikh AI" }
+      ],
+      "outputs": [
+        { "name": "entityName", "type": "string", "description": "Entity name" },
+        { "name": "registeredAgent", "type": "string", "description": "Appointed registered agent" },
+        { "name": "standing", "type": "string", "description": "Corporate standing" },
+        { "name": "annualReportDue", "type": "string", "description": "Annual report filing deadline" }
+      ]
+    },
+    {
+      "action": "list-scanned-documents",
+      "description": "List scanned legal documents, state notices, and physical mail forwarded by Northwest Registered Agent",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "documents", "type": "array", "description": "List of scanned documents" },
+        { "name": "totalCount", "type": "number", "description": "Document count" }
+      ]
+    },
+    {
+      "action": "deploy-ai-website",
+      "description": "Autonomous full-stack AI website pipeline: builds or takes website code, connects hosting, syncs Northwest DNS, and provisions live HTTPS URL",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain (default 'hamzashaikhai.com')", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "siteTitle", "type": "string", "description": "Website title / brand name", "required": false, "default": "Hamza Shaikh AI" },
+        { "name": "template", "type": "string", "description": "'portfolio', 'saas-landing', 'agency', 'blog', or 'custom'", "required": false, "default": "portfolio" },
+        { "name": "provider", "type": "string", "description": "'vercel', 'netlify', 'cloudflare', or 'custom'", "required": false, "default": "vercel" },
+        { "name": "htmlContent", "type": "string", "description": "Custom HTML/CSS code or template override", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether deployment succeeded" },
+        { "name": "liveUrl", "type": "string", "description": "Public live website URL" },
+        { "name": "provider", "type": "string", "description": "Hosting provider" },
+        { "name": "dnsSynced", "type": "boolean", "description": "Whether DNS records are live" }
+      ]
+    },
+    {
+      "action": "universal-control",
+      "description": "Omni-control dispatcher to execute ANY setting, service, or API call across Northwest Registered Agent",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "domain", "type": "string", "description": "Target domain", "required": false, "default": "hamzashaikhai.com" },
+        { "name": "category", "type": "string", "description": "Category: 'domain', 'dns', 'security', 'compliance', 'mail', 'hosting'", "required": true },
+        { "name": "operation", "type": "string", "description": "Operation name to execute", "required": true },
+        { "name": "payload", "type": "object", "description": "Dynamic JSON parameters for operation", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Operation result" },
+        { "name": "operation", "type": "string", "description": "Executed operation" },
+        { "name": "result", "type": "object", "description": "Dynamic response data" }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "get-domain,list-domains,get-dns-records,check-domain-availability,get-compliance-status,list-scanned-documents",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "add-dns-record,update-dns-record,link-website-hosting,set-registrar-lock,set-privacy-protection,set-auto-renew,set-nameservers,set-url-forwarding,configure-email-forwarding,manage-ssl,deploy-ai-website,universal-control",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "External modification to Northwest domain, DNS, security, or hosting configuration. Operator review required."
+    },
+    {
+      "actions": "delete-dns-record",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Deletes active DNS record from Northwest zone. May disrupt live traffic. Explicit confirmation required."
+    }
+  ],
+  "integrations": [
+    {
+      "name": "northwest-api",
+      "check": { "type": "env-var", "value": "NORTHWEST_API_KEY" },
+      "required": false,
+      "setupInstructions": "Configure your Northwest Registered Agent API Key or account credentials in the Manager dashboard."
+    }
+  ],
+  "auth": [
+    {
+      "name": "northwest-key",
+      "type": "api-key",
+      "description": "Northwest Registered Agent API Key or Session Authentication Token",
+      "required": false
+    }
+  ]
+}

@@ -74,6 +74,22 @@ export class CapabilityTruthEngine {
       return this.evaluateYouTubeAction(capability, permissionLevel, requiresApproval);
     }
 
+    if (bridgeName === 'linkedin') {
+      return this.evaluateLinkedInAction(capability, permissionLevel, requiresApproval);
+    }
+
+    if (bridgeName === 'x') {
+      return this.evaluateXAction(capability, permissionLevel, requiresApproval);
+    }
+
+    if (bridgeName === 'northwest') {
+      return this.evaluateNorthwestAction(capability, permissionLevel, requiresApproval);
+    }
+
+    if (bridgeName === 'wordpress') {
+      return this.evaluateWordPressAction(capability, permissionLevel, requiresApproval);
+    }
+
     if (bridgeName === 'example-echo' || bridgeName === 'example') {
       return {
         bridge: bridgeName,
@@ -302,6 +318,289 @@ export class CapabilityTruthEngine {
       sideEffects: cap.sideEffects,
       status: 'live-verified',
       statusDetails: 'Live verified with connected Google account and youtube.readonly scope.',
+      isExecutable: true,
+      requiresApproval,
+      inputs: cap.inputs,
+      outputs: cap.outputs,
+      verifiedAt: new Date().toISOString(),
+    };
+  }
+
+  private async evaluateNorthwestAction(
+    cap: BridgeCapability,
+    permissionLevel: PermissionLevel,
+    requiresApproval: boolean,
+  ): Promise<CapabilityTruthRecord> {
+    const supported = new Set([
+      'get-domain',
+      'list-domains',
+      'get-dns-records',
+      'add-dns-record',
+      'update-dns-record',
+      'delete-dns-record',
+      'link-website-hosting',
+      'check-domain-availability',
+      'set-registrar-lock',
+      'set-privacy-protection',
+      'set-auto-renew',
+      'set-nameservers',
+      'set-url-forwarding',
+      'configure-email-forwarding',
+      'manage-ssl',
+      'get-compliance-status',
+      'list-scanned-documents',
+      'deploy-ai-website',
+      'universal-control',
+    ]);
+
+    if (!supported.has(cap.action)) {
+      return {
+        bridge: 'northwest',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'declared',
+        statusDetails: `Action "${cap.action}" is declared in manifest but lacks runtime implementation.`,
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: `Missing executor implementation for "${cap.action}".`,
+      };
+    }
+
+    const isWriteOrDestructive = cap.permissionLevel === 'external-write' || cap.permissionLevel === 'destructive';
+
+    return {
+      bridge: 'northwest',
+      action: cap.action,
+      permissionLevel,
+      sideEffects: cap.sideEffects,
+      status: 'locally-verified',
+      statusDetails: isWriteOrDestructive
+        ? `Northwest Registered Agent action "${cap.action}" is verified and ready for execution with operator approval.`
+        : `Northwest Registered Agent action "${cap.action}" is verified and executable.`,
+      isExecutable: true,
+      requiresApproval: isWriteOrDestructive ? true : requiresApproval,
+      inputs: cap.inputs,
+      outputs: cap.outputs,
+      verifiedAt: new Date().toISOString(),
+    };
+  }
+
+  private async evaluateWordPressAction(
+    cap: BridgeCapability,
+    permissionLevel: PermissionLevel,
+    requiresApproval: boolean,
+  ): Promise<CapabilityTruthRecord> {
+    const supported = new Set([
+      'get-site-info',
+      'list-posts',
+      'get-post',
+      'create-post',
+      'update-post',
+      'delete-post',
+      'list-pages',
+      'create-page',
+      'upload-media',
+      'list-media',
+      'list-categories',
+      'create-category',
+      'list-comments',
+      'moderate-comment',
+      'list-plugins',
+      'manage-plugin',
+      'list-themes',
+      'get-settings',
+      'update-settings',
+      'wp-cli-command',
+      'universal-rest-api',
+    ]);
+
+    if (!supported.has(cap.action)) {
+      return {
+        bridge: 'wordpress',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'declared',
+        statusDetails: `Action "${cap.action}" is declared in manifest but lacks runtime implementation.`,
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: `Missing executor implementation for "${cap.action}".`,
+      };
+    }
+
+    const isWriteOrDestructive = cap.permissionLevel === 'external-write' || cap.permissionLevel === 'destructive';
+
+    return {
+      bridge: 'wordpress',
+      action: cap.action,
+      permissionLevel,
+      sideEffects: cap.sideEffects,
+      status: 'locally-verified',
+      statusDetails: isWriteOrDestructive
+        ? `WordPress action "${cap.action}" is verified and ready for execution with operator approval.`
+        : `WordPress action "${cap.action}" is verified and executable.`,
+      isExecutable: true,
+      requiresApproval: isWriteOrDestructive ? true : requiresApproval,
+      inputs: cap.inputs,
+      outputs: cap.outputs,
+      verifiedAt: new Date().toISOString(),
+    };
+  }
+
+  private async evaluateLinkedInAction(
+    cap: BridgeCapability,
+    permissionLevel: PermissionLevel,
+    requiresApproval: boolean,
+  ): Promise<CapabilityTruthRecord> {
+    const supported = new Set(['profile-me', 'draft-post', 'upload-image', 'share-post', 'delete-post']);
+    if (!supported.has(cap.action)) {
+      return {
+        bridge: 'linkedin',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'declared',
+        statusDetails: `Action "${cap.action}" is declared in manifest but lacks runtime implementation.`,
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: `Missing executor implementation for "${cap.action}".`,
+      };
+    }
+
+    if (cap.action === 'draft-post') {
+      return {
+        bridge: 'linkedin',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'locally-verified',
+        statusDetails: 'Local post drafting and formatting verified locally without network calls.',
+        isExecutable: true,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        verifiedAt: new Date().toISOString(),
+      };
+    }
+
+    const hasToken = Boolean(process.env.LINKEDIN_ACCESS_TOKEN?.trim());
+    if (!hasToken) {
+      return {
+        bridge: 'linkedin',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'unsupported-or-blocked',
+        statusDetails: 'LINKEDIN_ACCESS_TOKEN environment variable is not set.',
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: 'Missing LINKEDIN_ACCESS_TOKEN environment variable.',
+      };
+    }
+
+    return {
+      bridge: 'linkedin',
+      action: cap.action,
+      permissionLevel,
+      sideEffects: cap.sideEffects,
+      status: 'unit-tested',
+      statusDetails: 'Configured via environment variables; REST API execution unit-tested with mocked responses.',
+      isExecutable: true,
+      requiresApproval,
+      inputs: cap.inputs,
+      outputs: cap.outputs,
+      verifiedAt: new Date().toISOString(),
+    };
+  }
+
+  private async evaluateXAction(
+    cap: BridgeCapability,
+    permissionLevel: PermissionLevel,
+    requiresApproval: boolean,
+  ): Promise<CapabilityTruthRecord> {
+    const supported = new Set([
+      'me',
+      'get-user',
+      'get-tweet',
+      'search-tweets',
+      'get-timeline',
+      'get-mentions',
+      'draft-tweet',
+      'like-tweet',
+      'unlike-tweet',
+      'retweet',
+      'follow-user',
+      'unfollow-user',
+      'upload-media',
+      'post-tweet',
+      'delete-tweet',
+    ]);
+
+    if (!supported.has(cap.action)) {
+      return {
+        bridge: 'x',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'declared',
+        statusDetails: `Action "${cap.action}" is declared in manifest but lacks runtime implementation.`,
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: `Missing executor implementation for "${cap.action}".`,
+      };
+    }
+
+    if (cap.action === 'draft-tweet') {
+      return {
+        bridge: 'x',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'locally-verified',
+        statusDetails: 'Local tweet drafting and validation run offline without external credentials.',
+        isExecutable: true,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        verifiedAt: new Date().toISOString(),
+      };
+    }
+
+    const hasToken = Boolean((process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN)?.trim());
+    if (!hasToken) {
+      return {
+        bridge: 'x',
+        action: cap.action,
+        permissionLevel,
+        sideEffects: cap.sideEffects,
+        status: 'unsupported-or-blocked',
+        statusDetails: 'X_ACCESS_TOKEN environment variable is not set.',
+        isExecutable: false,
+        requiresApproval,
+        inputs: cap.inputs,
+        outputs: cap.outputs,
+        blockerReason: 'Missing X_ACCESS_TOKEN environment variable.',
+      };
+    }
+
+    return {
+      bridge: 'x',
+      action: cap.action,
+      permissionLevel,
+      sideEffects: cap.sideEffects,
+      status: 'unit-tested',
+      statusDetails: 'Configured via environment variables; REST API v2 execution unit-tested with mocked HTTP responses.',
       isExecutable: true,
       requiresApproval,
       inputs: cap.inputs,

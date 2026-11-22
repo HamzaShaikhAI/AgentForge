@@ -66,53 +66,94 @@ export class McpManager {
    * Restores protected secrets from the OS secure credential store.
    */
   async loadConfiguredServers(): Promise<void> {
-    if (!existsSync(this.storagePath)) {
-      return;
-    }
+    if (existsSync(this.storagePath)) {
+      try {
+        const raw = await readFile(this.storagePath, 'utf-8');
+        const configs = JSON.parse(raw) as McpServerConfig[];
+        if (Array.isArray(configs)) {
+          for (const cfg of configs) {
+            if (cfg && cfg.id && !this.clients.has(cfg.id)) {
+              // Restore protected secrets from secure credential store
+              try {
+                const stored = await this.credentialStore.load(`mcp_${cfg.id}`);
+                const extra = stored?.extraData as
+                  | { env?: Record<string, string>; headers?: Record<string, string> }
+                  | undefined;
 
-    try {
-      const raw = await readFile(this.storagePath, 'utf-8');
-      const configs = JSON.parse(raw) as McpServerConfig[];
-      if (Array.isArray(configs)) {
-        for (const cfg of configs) {
-          if (cfg && cfg.id && !this.clients.has(cfg.id)) {
-            // Restore protected secrets from secure credential store
-            try {
-              const stored = await this.credentialStore.load(`mcp_${cfg.id}`);
-              const extra = stored?.extraData as
-                | { env?: Record<string, string>; headers?: Record<string, string> }
-                | undefined;
-
-              if (extra) {
-                if (extra.env && cfg.env) {
-                  for (const [k, v] of Object.entries(extra.env)) {
-                    if (cfg.env[k] === '[SECURE_STORE]') {
-                      cfg.env[k] = v;
+                if (extra) {
+                  if (extra.env && cfg.env) {
+                    for (const [k, v] of Object.entries(extra.env)) {
+                      if (cfg.env[k] === '[SECURE_STORE]') {
+                        cfg.env[k] = v;
+                      }
+                    }
+                  }
+                  if (extra.headers && cfg.headers) {
+                    for (const [k, v] of Object.entries(extra.headers)) {
+                      if (cfg.headers[k] === '[SECURE_STORE]') {
+                        cfg.headers[k] = v;
+                      }
                     }
                   }
                 }
-                if (extra.headers && cfg.headers) {
-                  for (const [k, v] of Object.entries(extra.headers)) {
-                    if (cfg.headers[k] === '[SECURE_STORE]') {
-                      cfg.headers[k] = v;
-                    }
-                  }
-                }
+              } catch {
+                // ignore credential retrieval errors
               }
-            } catch {
-              // ignore credential retrieval errors
-            }
 
-            const client = this.createClient(cfg);
-            this.clients.set(cfg.id, client);
-            if (cfg.autoConnect) {
-              client.connect().catch(() => {});
+              const client = this.createClient(cfg);
+              this.clients.set(cfg.id, client);
+              if (cfg.autoConnect) {
+                client.connect().catch(() => {});
+              }
             }
           }
         }
+      } catch {
+        // Ignore unparseable configs or missing file
       }
-    } catch {
-      // Ignore unparseable configs or missing file
+    }
+
+    // Auto-discover servers defined in workspace mcp_config.json, mcp.json, or .mcp.json
+    const candidateFiles = ['mcp_config.json', 'mcp.json', '.mcp.json'];
+    for (const file of candidateFiles) {
+      const fullPath = join(process.cwd(), file);
+      if (existsSync(fullPath)) {
+        try {
+          const raw = await readFile(fullPath, 'utf-8');
+          const parsed = JSON.parse(raw);
+          const serversObj = parsed.mcpServers || parsed.servers;
+          if (serversObj && typeof serversObj === 'object') {
+            for (const [srvId, srvCfg] of Object.entries(serversObj)) {
+              if (srvCfg && typeof srvCfg === 'object' && !this.clients.has(srvId)) {
+                const rawObj = srvCfg as {
+                  name?: string;
+                  command?: string;
+                  args?: string[];
+                  env?: Record<string, string>;
+                  url?: string;
+                  headers?: Record<string, string>;
+                  autoConnect?: boolean;
+                };
+                const cfg: McpServerConfig = {
+                  id: srvId,
+                  name: rawObj.name || srvId,
+                  transport: rawObj.url ? 'http' : 'stdio',
+                  command: rawObj.command,
+                  args: rawObj.args,
+                  env: rawObj.env,
+                  url: rawObj.url,
+                  headers: rawObj.headers,
+                  autoConnect: false,
+                };
+                const client = this.createClient(cfg);
+                this.clients.set(srvId, client);
+              }
+            }
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
     }
   }
 

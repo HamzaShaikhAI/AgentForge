@@ -1,0 +1,56 @@
+{
+  "schema": "1.0",
+  "name": "exa",
+  "displayName": "Exa Semantic Search",
+  "version": "1.0.0",
+  "description": "Neural embeddings-based semantic web search and deep research engine designed specifically for autonomous AI agents.",
+  "category": "productivity",
+  "capabilities": [
+    {
+      "action": "search",
+      "description": "Perform neural or keyword search across the web using natural language intent.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "find-similar",
+      "description": "Discover web pages semantically related to a given URL.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-contents",
+      "description": "Extract clean markdown text and highlights from specific web page URLs.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "search-and-contents",
+      "description": "Perform neural search and extract full page contents and summaries in one step.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "academic-research",
+      "description": "Search scientific papers, preprints, and research documentation with peer-reviewed source filtering.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "auth": [
+    {
+      "name": "exa-api-key",
+      "type": "api-key",
+      "description": "Exa AI Search API Key",
+      "required": false
+    }
+  ],
+  "integrations": [],
+  "permissions": [
+    {
+      "actions": "search|find-similar|get-contents|search-and-contents|academic-research",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

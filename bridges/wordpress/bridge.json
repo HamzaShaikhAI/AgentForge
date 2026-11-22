@@ -1,0 +1,362 @@
+{
+  "schema": "1.0",
+  "name": "wordpress",
+  "displayName": "WordPress CMS & Engine",
+  "description": "Infinite control WordPress integration: manage posts, pages, Gutenberg blocks, media library, categories, tags, comments, users, plugins, themes, site settings, WP-CLI commands, and universal REST API execution for Antigravity & AgentRouter.",
+  "version": "1.0.0",
+  "author": "AgentForge",
+  "category": "content-creation",
+  "capabilities": [
+    {
+      "action": "get-site-info",
+      "description": "Retrieve comprehensive WordPress site details, version, active theme, namespaces, and administrator settings",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "siteUrl", "type": "string", "description": "WordPress site root URL (e.g. 'https://example.com' or 'http://localhost:8000')", "required": false }
+      ],
+      "outputs": [
+        { "name": "name", "type": "string", "description": "Site title" },
+        { "name": "url", "type": "string", "description": "Site root URL" },
+        { "name": "description", "type": "string", "description": "Site tagline / description" },
+        { "name": "version", "type": "string", "description": "WordPress core version" },
+        { "name": "timezone", "type": "string", "description": "Site timezone" },
+        { "name": "namespaces", "type": "array", "description": "Available REST API namespaces" }
+      ]
+    },
+    {
+      "action": "list-posts",
+      "description": "List posts with pagination, search query, category, and status filters (publish, draft, future, trash)",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "status", "type": "string", "description": "'publish', 'draft', 'pending', 'future', 'trash', or 'any'", "required": false, "default": "publish" },
+        { "name": "perPage", "type": "number", "description": "Number of posts to return (1-100, default 10)", "required": false, "default": 10 },
+        { "name": "page", "type": "number", "description": "Page number for pagination", "required": false, "default": 1 },
+        { "name": "search", "type": "string", "description": "Search term across post titles and content", "required": false },
+        { "name": "categories", "type": "array", "description": "Filter by category IDs", "required": false }
+      ],
+      "outputs": [
+        { "name": "posts", "type": "array", "description": "List of post objects" },
+        { "name": "totalPosts", "type": "number", "description": "Total count of matching posts" },
+        { "name": "totalPages", "type": "number", "description": "Total pagination pages" }
+      ]
+    },
+    {
+      "action": "get-post",
+      "description": "Retrieve a single post by ID or slug with full content, Gutenberg blocks, and metadata",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "postId", "type": "number", "description": "Numeric WordPress post ID", "required": false },
+        { "name": "slug", "type": "string", "description": "Post slug identifier", "required": false }
+      ],
+      "outputs": [
+        { "name": "post", "type": "object", "description": "Post details object" }
+      ]
+    },
+    {
+      "action": "create-post",
+      "description": "Create a new WordPress post with title, HTML or Gutenberg content, excerpt, status, categories, and tags",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "title", "type": "string", "description": "Post title", "required": true },
+        { "name": "content", "type": "string", "description": "Post content in HTML, Markdown, or Gutenberg block markup", "required": true },
+        { "name": "status", "type": "string", "description": "'publish', 'draft', 'pending', or 'future'", "required": false, "default": "draft" },
+        { "name": "excerpt", "type": "string", "description": "Post summary excerpt", "required": false },
+        { "name": "slug", "type": "string", "description": "Custom URL slug", "required": false },
+        { "name": "categories", "type": "array", "description": "Category IDs or names to assign", "required": false },
+        { "name": "tags", "type": "array", "description": "Tag IDs or names to assign", "required": false },
+        { "name": "featuredMedia", "type": "number", "description": "Media attachment ID for featured image", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether post was created" },
+        { "name": "postId", "type": "number", "description": "ID of newly created post" },
+        { "name": "link", "type": "string", "description": "Public URL or preview link" },
+        { "name": "post", "type": "object", "description": "Created post object" }
+      ]
+    },
+    {
+      "action": "update-post",
+      "description": "Update an existing WordPress post's title, content, status, categories, or tags",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "postId", "type": "number", "description": "Numeric ID of the post to update", "required": true },
+        { "name": "title", "type": "string", "description": "Updated post title", "required": false },
+        { "name": "content", "type": "string", "description": "Updated post content", "required": false },
+        { "name": "status", "type": "string", "description": "Updated status: 'publish', 'draft', etc.", "required": false },
+        { "name": "excerpt", "type": "string", "description": "Updated excerpt", "required": false },
+        { "name": "categories", "type": "array", "description": "Updated category IDs", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether post was updated" },
+        { "name": "postId", "type": "number", "description": "Updated post ID" },
+        { "name": "post", "type": "object", "description": "Updated post object" }
+      ]
+    },
+    {
+      "action": "delete-post",
+      "description": "Trash or permanently delete a WordPress post. Requires operator confirmation.",
+      "permissionLevel": "destructive",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "postId", "type": "number", "description": "Post ID to delete", "required": true },
+        { "name": "force", "type": "boolean", "description": "Whether to bypass trash and permanently delete", "required": false, "default": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether post was deleted" },
+        { "name": "postId", "type": "number", "description": "Deleted post ID" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "list-pages",
+      "description": "List site hierarchical pages with parent/child structure and template info",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "status", "type": "string", "description": "'publish', 'draft', 'any'", "required": false, "default": "publish" },
+        { "name": "parent", "type": "number", "description": "Filter by parent page ID", "required": false }
+      ],
+      "outputs": [
+        { "name": "pages", "type": "array", "description": "List of page objects" },
+        { "name": "totalCount", "type": "number", "description": "Total pages count" }
+      ]
+    },
+    {
+      "action": "create-page",
+      "description": "Create a new static page in WordPress (e.g. About, Portfolio, Contact, Privacy)",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "title", "type": "string", "description": "Page title", "required": true },
+        { "name": "content", "type": "string", "description": "Page body content", "required": true },
+        { "name": "status", "type": "string", "description": "'publish' or 'draft'", "required": false, "default": "draft" },
+        { "name": "slug", "type": "string", "description": "Custom page slug", "required": false },
+        { "name": "parent", "type": "number", "description": "Parent page ID for hierarchical pages", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether page was created" },
+        { "name": "pageId", "type": "number", "description": "Created page ID" },
+        { "name": "link", "type": "string", "description": "Public URL" }
+      ]
+    },
+    {
+      "action": "upload-media",
+      "description": "Upload an image, document, or audio asset to the WordPress Media Library",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "filePath", "type": "string", "description": "Local absolute file path to upload", "required": true },
+        { "name": "title", "type": "string", "description": "Media title", "required": false },
+        { "name": "altText", "type": "string", "description": "Accessibility alt text", "required": false },
+        { "name": "caption", "type": "string", "description": "Media caption", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether upload succeeded" },
+        { "name": "mediaId", "type": "number", "description": "Assigned attachment ID" },
+        { "name": "sourceUrl", "type": "string", "description": "Direct public URL to media" }
+      ]
+    },
+    {
+      "action": "list-media",
+      "description": "List media assets in WordPress media library with MIME types and dimensions",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "mediaType", "type": "string", "description": "'image', 'video', 'audio', 'application', or 'all'", "required": false, "default": "image" },
+        { "name": "perPage", "type": "number", "description": "Number of items to return", "required": false, "default": 20 }
+      ],
+      "outputs": [
+        { "name": "media", "type": "array", "description": "List of media attachment objects" },
+        { "name": "totalCount", "type": "number", "description": "Total count of media assets" }
+      ]
+    },
+    {
+      "action": "list-categories",
+      "description": "List all taxonomy categories with post counts",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "categories", "type": "array", "description": "List of categories" }
+      ]
+    },
+    {
+      "action": "create-category",
+      "description": "Create a new post category",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "name", "type": "string", "description": "Category name", "required": true },
+        { "name": "description", "type": "string", "description": "Category description", "required": false },
+        { "name": "slug", "type": "string", "description": "Category slug", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether category was created" },
+        { "name": "categoryId", "type": "number", "description": "Created category ID" }
+      ]
+    },
+    {
+      "action": "list-comments",
+      "description": "List comments across posts with moderation status",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [
+        { "name": "status", "type": "string", "description": "'approve', 'hold', 'spam', 'trash', or 'all'", "required": false, "default": "all" }
+      ],
+      "outputs": [
+        { "name": "comments", "type": "array", "description": "List of comment objects" }
+      ]
+    },
+    {
+      "action": "moderate-comment",
+      "description": "Approve, hold, mark as spam, or delete a comment",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "commentId", "type": "number", "description": "Target comment ID", "required": true },
+        { "name": "status", "type": "string", "description": "'approve', 'hold', 'spam', or 'trash'", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether moderation succeeded" },
+        { "name": "commentId", "type": "number", "description": "Comment ID" },
+        { "name": "status", "type": "string", "description": "New status" }
+      ]
+    },
+    {
+      "action": "list-plugins",
+      "description": "List installed WordPress plugins, version numbers, and active/inactive status",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "plugins", "type": "array", "description": "List of plugin objects" },
+        { "name": "activeCount", "type": "number", "description": "Active plugins count" }
+      ]
+    },
+    {
+      "action": "manage-plugin",
+      "description": "Activate, deactivate, install, or update a WordPress plugin. Requires operator approval.",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "plugin", "type": "string", "description": "Plugin slug or directory/file (e.g. 'woocommerce/woocommerce.php')", "required": true },
+        { "name": "operation", "type": "string", "description": "'activate', 'deactivate', 'install', 'update', or 'delete'", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether operation succeeded" },
+        { "name": "plugin", "type": "string", "description": "Target plugin" },
+        { "name": "message", "type": "string", "description": "Status message" }
+      ]
+    },
+    {
+      "action": "list-themes",
+      "description": "List installed WordPress themes, active theme, block theme status, and version",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "themes", "type": "array", "description": "List of installed themes" },
+        { "name": "activeTheme", "type": "string", "description": "Currently active theme stylesheet/slug" }
+      ]
+    },
+    {
+      "action": "get-settings",
+      "description": "Retrieve global WordPress site settings (title, tagline, permalinks, timezone, language)",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "title", "type": "string", "description": "Site title" },
+        { "name": "description", "type": "string", "description": "Tagline" },
+        { "name": "url", "type": "string", "description": "Site URL" },
+        { "name": "timezone", "type": "string", "description": "Timezone string" },
+        { "name": "dateFormat", "type": "string", "description": "Date format" }
+      ]
+    },
+    {
+      "action": "update-settings",
+      "description": "Update global WordPress site settings",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "title", "type": "string", "description": "New site title", "required": false },
+        { "name": "description", "type": "string", "description": "New tagline", "required": false },
+        { "name": "timezone", "type": "string", "description": "Timezone string (e.g. 'UTC', 'America/New_York')", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether settings were updated" },
+        { "name": "message", "type": "string", "description": "Confirmation message" }
+      ]
+    },
+    {
+      "action": "wp-cli-command",
+      "description": "Execute any WP-CLI command on the WordPress installation (e.g. 'wp post generate', 'wp db check', 'wp cache flush'). Requires operator approval.",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "command", "type": "string", "description": "Full WP-CLI command (e.g. 'post list --format=json' or 'cache flush')", "required": true }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether WP-CLI command completed" },
+        { "name": "stdout", "type": "string", "description": "Command standard output" },
+        { "name": "exitCode", "type": "number", "description": "Command exit code" }
+      ]
+    },
+    {
+      "action": "universal-rest-api",
+      "description": "Infinite control dispatcher: execute ANY arbitrary WordPress REST endpoint (GET, POST, PUT, DELETE) with custom payload",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "endpoint", "type": "string", "description": "REST API path (e.g. '/wp-json/wp/v2/posts' or '/wp-json/wc/v3/products')", "required": true },
+        { "name": "method", "type": "string", "description": "HTTP method: 'GET', 'POST', 'PUT', 'PATCH', or 'DELETE'", "required": false, "default": "GET" },
+        { "name": "payload", "type": "object", "description": "Request body payload for write requests", "required": false },
+        { "name": "params", "type": "object", "description": "Query parameters", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether API request succeeded" },
+        { "name": "status", "type": "number", "description": "HTTP response status code" },
+        { "name": "data", "type": "object", "description": "Returned JSON response data" }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "get-site-info,list-posts,get-post,list-pages,list-media,list-categories,list-comments,list-plugins,list-themes,get-settings",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-post,update-post,create-page,upload-media,create-category,moderate-comment,manage-plugin,update-settings,wp-cli-command,universal-rest-api",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Modifies live WordPress content, settings, or database. Explicit operator review required."
+    },
+    {
+      "actions": "delete-post",
+      "level": "destructive",
+      "requiresApproval": true,
+      "approvalReason": "Permanently deletes or trashes WordPress content. Confirmation required."
+    }
+  ],
+  "integrations": [
+    {
+      "name": "wordpress-rest-api",
+      "check": { "type": "env-var", "value": "WORDPRESS_URL" },
+      "required": false,
+      "setupInstructions": "Set WORDPRESS_URL (and optionally WORDPRESS_USER and WORDPRESS_APP_PASSWORD) in environment variables or Manager dashboard."
+    }
+  ],
+  "auth": [
+    {
+      "name": "wordpress-app-password",
+      "type": "api-key",
+      "description": "WordPress Application Password for REST API v2",
+      "required": false
+    }
+  ]
+}

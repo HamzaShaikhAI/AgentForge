@@ -1,0 +1,284 @@
+{
+  "schema": "1.0",
+  "name": "hostinger",
+  "displayName": "Hostinger",
+  "description": "Hostinger web hosting, VPS, domains, DNS zones, MySQL databases, SSL certificates, email mailboxes, and automated website deployments.",
+  "version": "1.0.0",
+  "category": "cloud-services",
+  "capabilities": [
+    {
+      "action": "get-account-info",
+      "description": "Get Hostinger account profile, billing status, and active plan summary",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-invoices",
+      "description": "List billing invoices, renewal dates, and payment history",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-hosting-orders",
+      "description": "List all active web hosting orders and servers",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-hosting-order",
+      "description": "Retrieve detailed hosting plan configuration, server IP, and disk usage",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-domains",
+      "description": "List registered domains with status, auto-renewal, and expiry dates",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-domain-info",
+      "description": "Get detailed domain registration info, nameservers, and transfer lock",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "check-domain-availability",
+      "description": "Check if a domain name is available for registration",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "update-nameservers",
+      "description": "Update authoritative nameservers for a registered domain",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-dns-records",
+      "description": "List all DNS zone records (A, CNAME, TXT, MX, etc.) for a domain",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-dns-record",
+      "description": "Retrieve specific DNS record metadata and target value",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-dns-record",
+      "description": "Add a new DNS record to the domain zone",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "update-dns-record",
+      "description": "Update target, TTL, or priority of an existing DNS record",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-dns-record",
+      "description": "Permanently remove a DNS record from the zone",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "reset-dns-zone",
+      "description": "Reset domain DNS zone back to Hostinger default records",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-websites",
+      "description": "List hosted websites, primary domains, and document roots",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-website-details",
+      "description": "Inspect website configuration, PHP version, SSL status, and IP",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-website",
+      "description": "Provision a new website slot under a hosting account",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-website",
+      "description": "Permanently delete a website and its document root",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "deploy-static-site",
+      "description": "Deploy local web build files to website public_html root",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "set-php-version",
+      "description": "Configure active PHP runtime version for a website",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-databases",
+      "description": "List MySQL databases and assigned storage",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-database",
+      "description": "Provision a new MySQL database and database user",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-database",
+      "description": "Permanently drop a MySQL database and its data",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-database-users",
+      "description": "List MySQL users and their database permissions",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-ssl-status",
+      "description": "Inspect Let's Encrypt or custom SSL certificate validity",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "install-ssl",
+      "description": "Provision and activate free Let's Encrypt SSL certificate",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-email-mailboxes",
+      "description": "List configured email accounts and quota usage",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-email-mailbox",
+      "description": "Create a new custom domain email mailbox",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-email-mailbox",
+      "description": "Delete an email mailbox and all stored messages",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-email-forwarders",
+      "description": "List email forwarding rules for a domain",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-backups",
+      "description": "List available automated and manual snapshots",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-backup",
+      "description": "Create an on-demand snapshot backup of website files and database",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "restore-backup",
+      "description": "Restore website files or database from an existing snapshot",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "list-vps",
+      "description": "List cloud VPS instances, operating systems, and IP addresses",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-vps-status",
+      "description": "Inspect VPS CPU, memory, bandwidth, and power state",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "start-vps",
+      "description": "Power on a stopped VPS instance",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "stop-vps",
+      "description": "Power off an active VPS instance",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "restart-vps",
+      "description": "Reboot a VPS virtual machine instance",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "hostinger-raw-api",
+      "description": "Execute an arbitrary Hostinger REST API v1 endpoint",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [
+    {
+      "name": "hostinger-api",
+      "required": false,
+      "check": {
+        "type": "env-var",
+        "value": "HOSTINGER_API_TOKEN"
+      }
+    }
+  ],
+  "auth": [
+    {
+      "name": "hostinger-token",
+      "type": "api-key",
+      "description": "Hostinger API Access Token with hosting and domain permissions",
+      "required": false
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "get-account-info|list-invoices|list-hosting-orders|get-hosting-order|list-domains|get-domain-info|check-domain-availability|list-dns-records|get-dns-record|list-websites|get-website-details|list-databases|list-database-users|get-ssl-status|list-email-mailboxes|list-email-forwarders|list-backups|list-vps|get-vps-status",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "update-nameservers|create-dns-record|update-dns-record|create-website|set-php-version|create-database|install-ssl|create-email-mailbox|create-backup|start-vps|hostinger-raw-api",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "deploy-static-site",
+      "level": "publish",
+      "requiresApproval": true
+    },
+    {
+      "actions": "delete-dns-record|reset-dns-zone|delete-website|delete-database|delete-email-mailbox|restore-backup|stop-vps|restart-vps",
+      "level": "destructive",
+      "requiresApproval": true
+    }
+  ]
+}

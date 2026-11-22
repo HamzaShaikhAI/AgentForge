@@ -1,0 +1,49 @@
+{
+  "schema": "1.0",
+  "name": "context7",
+  "displayName": "Context7 Documentation Hub",
+  "version": "1.0.0",
+  "description": "Pulls verified, up-to-date library and framework documentation to eliminate API hallucinations across modern tech stacks (React 19, Next.js 15, Tailwind v4, Python 3.12, Node.js 22).",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "query-docs",
+      "description": "Search current library documentation and return verified API references.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "fetch-package-spec",
+      "description": "Retrieve package metadata, exports, and TypeScript type signatures from package registries.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "verify-api-syntax",
+      "description": "Check whether a proposed method, function call, or parameter exists in the target library version.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-code-examples",
+      "description": "Retrieve canonical, tested code examples for complex integration patterns.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "diff-library-versions",
+      "description": "Inspect breaking changes, deprecated methods, and migration guides between two versions.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "auth": [],
+  "integrations": [],
+  "permissions": [
+    {
+      "actions": "query-docs|fetch-package-spec|verify-api-syntax|get-code-examples|diff-library-versions",
+      "level": "read",
+      "requiresApproval": false
+    }
+  ]
+}

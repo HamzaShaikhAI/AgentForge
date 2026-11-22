@@ -1,0 +1,84 @@
+{
+  "schema": "1.0",
+  "name": "playwright",
+  "displayName": "Playwright Browser Automation",
+  "version": "1.0.0",
+  "description": "Cross-browser end-to-end automation, visual testing, web scraping, and accessibility inspection powered by Microsoft Playwright.",
+  "category": "development",
+  "capabilities": [
+    {
+      "action": "navigate",
+      "description": "Navigate active browser page to a target URL with configurable wait condition.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "click",
+      "description": "Click an element matching selector or text.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "fill",
+      "description": "Type text into an input field or textarea.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "evaluate",
+      "description": "Evaluate arbitrary JavaScript expression in page context.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "screenshot",
+      "description": "Capture page or element screenshot.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "pdf",
+      "description": "Render current page as PDF document.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-content",
+      "description": "Extract plain text or HTML content from page or element.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "inspect-accessibility",
+      "description": "Extract full accessibility ARIA tree snapshot for a11y auditing.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "run-e2e-suite",
+      "description": "Execute Playwright end-to-end test specification script.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "close-browser",
+      "description": "Close browser context and release system resources.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "auth": [],
+  "integrations": [],
+  "permissions": [
+    {
+      "actions": "navigate|evaluate|screenshot|pdf|get-content|inspect-accessibility|run-e2e-suite|close-browser",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "click|fill",
+      "level": "external-write",
+      "requiresApproval": false
+    }
+  ]
+}

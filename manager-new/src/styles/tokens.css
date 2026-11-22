@@ -1,0 +1,211 @@
+/* ==========================================================================
+   AgentForge Design Tokens — 3-Layer Professional Specification
+   Layer 1: Primitive (Raw palette)
+   Layer 2: Semantic (Contextual & theme-dependent)
+   Layer 3: Component (Ready-to-use component styling)
+   ========================================================================== */
+
+:root {
+  /* === LAYER 1: PRIMITIVES === */
+
+  /* Brand Core — Rose/Crimson tuned for WCAG AA */
+  --brand-50:  #fff1f3;
+  --brand-100: #ffe4e8;
+  --brand-200: #fecdd5;
+  --brand-300: #fda4b0;
+  --brand-400: #fb718f;
+  --brand-500: #f43f5e;
+  --brand-600: #e11d48;
+  --brand-700: #be123c;
+  --brand-800: #9f1239;
+  --brand-900: #881337;
+  --brand-950: #4c0519;
+
+  /* Technical Accent — Sky / Cyan */
+  --tech-50:  #f0faff;
+  --tech-100: #e0f7fe;
+  --tech-200: #bae6fd;
+  --tech-300: #7dd3fc;
+  --tech-400: #38bdf8;
+  --tech-500: #0ea5e9;
+  --tech-600: #0284c7;
+  --tech-700: #0369a1;
+  --tech-800: #075985;
+  --tech-900: #0c4a6e;
+  --tech-950: #082f49;
+
+  /* Warm Accent — Amber / Orange */
+  --warm-50:  #fffbeb;
+  --warm-100: #fef3c7;
+  --warm-200: #fde68a;
+  --warm-300: #fcd34d;
+  --warm-400: #fbbf24;
+  --warm-500: #f59e0b;
+  --warm-600: #d97706;
+  --warm-700: #b45309;
+  --warm-800: #92400e;
+  --warm-900: #78350f;
+  --warm-950: #451a03;
+
+  /* Success — Emerald */
+  --success-50:  #ecfdf5;
+  --success-100: #d1fae5;
+  --success-200: #a7f3d0;
+  --success-300: #6ee7b7;
+  --success-400: #34d399;
+  --success-500: #10b981;
+  --success-600: #059669;
+  --success-700: #047857;
+  --success-800: #065f46;
+  --success-900: #064e3b;
+  --success-950: #022c22;
+
+  /* Neutrals — Slate */
+  --neutral-0:   #ffffff;
+  --neutral-50:  #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  --neutral-950: #020617;
+  --neutral-975: #010308;
+
+  /* Spacing (4px unit) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Elevation */
+  --elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.2);
+  --elevation-2: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.3);
+  --elevation-3: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.3);
+  --elevation-4: 0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.3);
+  --elevation-5: 0 25px 50px -12px rgba(244,63,94,0.25), 0 10px 20px -10px rgba(0,0,0,0.4);
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Fluid Typography Scale */
+  --text-display: clamp(2rem, 3.5vw + 0.875rem, 3rem);
+  --text-h1: clamp(1.75rem, 2.5vw + 0.75rem, 2.25rem);
+  --text-h2: clamp(1.375rem, 1.8vw + 0.625rem, 1.75rem);
+  --text-h3: clamp(1.125rem, 1.2vw + 0.5rem, 1.375rem);
+  --text-body-lg: clamp(1.0625rem, 0.8vw + 0.5rem, 1.125rem);
+  --text-body: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-tiny: 0.6875rem;
+
+  /* Motion */
+  --duration-fast: 100ms;
+  --duration-base: 150ms;
+  --duration-smooth: 200ms;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* === LAYER 2: SEMANTIC TOKENS === */
+:root, [data-theme="dark"] {
+  --bg-canvas: var(--neutral-975);
+  --bg-base: var(--neutral-950);
+  --bg-elevated: var(--neutral-900);
+  --bg-overlay: rgba(2, 6, 23, 0.92);
+  --bg-input: var(--neutral-900);
+  --bg-hover: var(--neutral-800);
+
+  --border-hairline: rgba(148, 163, 184, 0.08);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-default: rgba(148, 163, 184, 0.22);
+  --border-strong: rgba(148, 163, 184, 0.35);
+  --border-brand: var(--brand-500);
+  --border-tech: var(--tech-500);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #94a3b8;
+  --text-inverse: var(--neutral-950);
+
+  --gradient-brand: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-600) 50%, var(--brand-700) 100%);
+  --gradient-brand-hover: linear-gradient(135deg, var(--brand-400) 0%, var(--brand-500) 50%, var(--brand-600) 100%);
+  --gradient-brand-subtle: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(225, 29, 72, 0.08) 50%, transparent 100%);
+
+  --gradient-tech: linear-gradient(135deg, var(--tech-400) 0%, var(--tech-500) 50%, var(--tech-600) 100%);
+  --gradient-tech-subtle: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(14, 165, 233, 0.06) 100%);
+
+  --gradient-warm: linear-gradient(135deg, var(--warm-400) 0%, var(--warm-500) 50%, var(--warm-600) 100%);
+  --gradient-success: linear-gradient(135deg, var(--success-400) 0%, var(--success-500) 50%, var(--success-600) 100%);
+
+  --bg-mesh: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(244, 63, 94, 0.08) 0%, transparent 50%),
+             radial-gradient(ellipse 60% 40% at 100% 100%, rgba(56, 189, 248, 0.06) 0%, transparent 50%);
+
+  /* Component tokens */
+  --card-bg: rgba(15, 23, 42, 0.75);
+  --card-border: var(--border-subtle);
+  --card-border-hover: rgba(244, 63, 94, 0.45);
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--brand-500);
+}
+
+[data-theme="light"] {
+  --bg-canvas: var(--neutral-50);
+  --bg-base: var(--neutral-0);
+  --bg-elevated: var(--neutral-100);
+  --bg-overlay: rgba(255, 255, 255, 0.96);
+  --bg-input: var(--neutral-100);
+  --bg-hover: var(--neutral-100);
+
+  --border-hairline: rgba(15, 23, 42, 0.06);
+  --border-subtle: rgba(15, 23, 42, 0.1);
+  --border-default: rgba(15, 23, 42, 0.14);
+  --border-strong: rgba(15, 23, 42, 0.22);
+  --border-brand: var(--brand-600);
+  --border-tech: var(--tech-600);
+
+  --text-primary: var(--neutral-950);
+  --text-secondary: var(--neutral-700);
+  --text-tertiary: var(--neutral-600);
+  --text-muted: var(--neutral-500);
+  --text-inverse: var(--neutral-50);
+
+  --gradient-brand: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-700) 50%, var(--brand-800) 100%);
+  --gradient-brand-hover: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-600) 50%, var(--brand-700) 100%);
+  --gradient-brand-subtle: linear-gradient(135deg, var(--brand-100) 0%, var(--brand-200) 50%, transparent 100%);
+
+  --gradient-tech: linear-gradient(135deg, var(--tech-500) 0%, var(--tech-600) 50%, var(--tech-700) 100%);
+  --gradient-tech-subtle: linear-gradient(135deg, var(--tech-50) 0%, var(--tech-100) 100%);
+
+  --bg-mesh: radial-gradient(ellipse 80% 50% at 50% -20%, var(--brand-100) 0%, transparent 50%),
+             radial-gradient(ellipse 60% 40% at 100% 100%, var(--tech-50) 0%, transparent 50%);
+
+  --card-bg: #ffffff;
+  --card-border: var(--border-subtle);
+  --card-border-hover: rgba(225, 29, 72, 0.5);
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--brand-600);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

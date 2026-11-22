@@ -1,0 +1,170 @@
+{
+  "schema": "1.0",
+  "name": "google-flow",
+  "displayName": "Google Flow Media Studio",
+  "description": "Unified Google GenAI creative suite running on Google Flow Credits (50 free daily + 1,000 Pro/mo): Gemini Omni conversational video, Nano Banana character & typography images, and Google Flow Music studio.",
+  "version": "1.0.0",
+  "category": "media",
+  "capabilities": [
+    {
+      "action": "get-credit-balance",
+      "description": "Inspect available Google Flow credits (50 free daily allowance + 1,000 monthly Pro subscription pool)",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "claim-daily-credits",
+      "description": "Claim the 50 free Google Flow daily credits refresh",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "set-subscription-tier",
+      "description": "Configure Google Flow subscription tier (Free, Plus 200, Pro 1,000 credits/mo, Ultra)",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-video",
+      "description": "Generate high-definition AI video from prompt, image reference, or conversational turns with Gemini Omni & Google Veo (Costs 10 Flow credits)",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "get-video-status",
+      "description": "Poll asynchronous video rendering progress, percentage, and asset URL (Free 0 credits)",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "extend-video",
+      "description": "Extend an existing generated video clip with sequential prompt continuity (Costs 5 Flow credits)",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-image",
+      "description": "Synthesize photorealistic or stylized images using Nano Banana (character & typography) and Imagen 3 (Costs 1 Flow credit)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "edit-image",
+      "description": "Conversational multi-turn image editing with Nano Banana with character consistency and typography (Costs 1 Flow credit)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "upscale-image",
+      "description": "Enhance and upscale image resolution up to 4x using generative detail restoration (Costs 2 Flow credits)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-music",
+      "description": "Google Flow Music studio: synthesize songs from genre, mood, BPM, user lyrics, AI Producer steering, vocals, and multi-track stems (Costs 5 Flow credits)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-tts",
+      "description": "Synthesize lifelike multi-voice speech audio with custom cadence, pitch, and accent (Costs 1 Flow credit)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-sfx",
+      "description": "Generate procedural foley and sound effects (Costs 1 Flow credit)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "download-media",
+      "description": "Download generated video, audio, or image asset directly to local disk with SHA-256 verification (Free 0 credits)",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "inspect-media",
+      "description": "Probe media duration, resolution, audio channels, bitrate, and codec metadata (Free 0 credits)",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-media-assets",
+      "description": "List all generated multimedia assets, prompts, and storage paths in local library (Free 0 credits)",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "transcribe-media",
+      "description": "Transcribe speech from video or audio with timestamped SRT/VTT subtitle output (Costs 2 Flow credits)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "compose-video",
+      "description": "Stitch video clips, background music score, and voiceover track into a final production MP4 (Costs 5 Flow credits)",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "google-flow-raw-api",
+      "description": "Execute raw Google Flow / GenAI multimodal REST endpoints (Costs 1 Flow credit)",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-or-create-project",
+      "description": "Inspect or initialize the Google Flow workspace project (default 'antigravity gen auto')",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "fetch-realtime-credits",
+      "description": "Fetch real-time credit quota balance from Google Flow with automatic depletion alert",
+      "permissionLevel": "read",
+      "sideEffects": false
+    }
+  ],
+  "integrations": [
+    {
+      "name": "google-flow-credits",
+      "required": false,
+      "check": {
+        "type": "env-var",
+        "value": "GOOGLE_FLOW_SESSION_ID"
+      }
+    }
+  ],
+  "auth": [
+    {
+      "name": "google-flow-credits",
+      "type": "oauth",
+      "description": "Google Flow account session with 50 free daily credits + 1,000 monthly Pro subscription credits (No paid API key required)",
+      "required": false
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "get-credit-balance|get-video-status|inspect-media|list-media-assets|get-or-create-project|fetch-realtime-credits",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "set-subscription-tier|download-media",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "claim-daily-credits|generate-image|edit-image|upscale-image|generate-music|generate-tts|generate-sfx|transcribe-media|google-flow-raw-api",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "generate-video|extend-video|compose-video",
+      "level": "publish",
+      "requiresApproval": true
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema": "1.0",
+  "name": "higgsfield",
+  "displayName": "Higgsfield AI Video",
+  "version": "1.0.0",
+  "description": "High-fidelity AI video generation and Director of Photography (DoP) camera controls. Supports text-to-video, image-to-video, camera pathing (pan, tilt, zoom, dolly, roll, orbit), character avatars, lip-sync, and 4K upscaling.",
+  "category": "media",
+  "capabilities": [
+    {
+      "action": "generate-video-prompt",
+      "description": "Generate cinematic video from text prompt with customizable DoP camera controls (motion, angles, speed, aspect ratio).",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "generate-image-to-video",
+      "description": "Animate a still image into dynamic video using prompt guidance and camera vectors.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "control-camera-motion",
+      "description": "Apply precise Director of Photography (DoP) camera trajectories to an existing prompt or scene.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "create-character-avatar",
+      "description": "Synthesize a consistent character persona or actor for multi-shot video production.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "lip-sync-video",
+      "description": "Synchronize character lips and facial performance with an audio speech track.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "upscale-video-4k",
+      "description": "Enhance resolution up to 4K and perform frame interpolation up to 60fps.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "motion-transfer",
+      "description": "Transfer human motion or camera movement from a reference video onto a target character.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-generation-status",
+      "description": "Query live generation task progress, rendering stage, and output URL.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "cancel-generation",
+      "description": "Cancel an in-progress video rendering task.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "download-video",
+      "description": "Download completed MP4 video asset to local disk with SHA-256 hash validation.",
+      "permissionLevel": "local-write",
+      "sideEffects": true
+    },
+    {
+      "action": "list-generations",
+      "description": "List historical video generations with status and metadata.",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "delete-generation",
+      "description": "Permanently delete a video generation asset from Higgsfield storage.",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "higgsfield-raw-api",
+      "description": "Dispatch raw HTTP request to Higgsfield AI API endpoint.",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "auth": [
+    {
+      "name": "higgsfield-api-key",
+      "type": "api-key",
+      "description": "Higgsfield AI API Key",
+      "required": false
+    }
+  ],
+  "integrations": [],
+  "permissions": [
+    {
+      "actions": "get-generation-status|list-generations",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "download-video",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "generate-video-prompt|generate-image-to-video|control-camera-motion|create-character-avatar|lip-sync-video|upscale-video-4k|motion-transfer|cancel-generation|higgsfield-raw-api",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "delete-generation",
+      "level": "destructive",
+      "requiresApproval": true
+    }
+  ]
+}

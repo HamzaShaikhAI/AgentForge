@@ -4,6 +4,18 @@ import { SqliteAdapter } from './sqlite-adapter.js';
 import { HttpAdapter } from './http-adapter.js';
 import { GitAdapter } from './git-adapter.js';
 import { YouTubeAdapter } from './youtube-adapter.js';
+import { LinkedInAdapter } from './linkedin.js';
+import { XAdapter } from './x.js';
+import { NorthwestAdapter } from './northwest.js';
+import { WordPressAdapter } from './wordpress.js';
+import { HostingerAdapter } from './hostinger.js';
+import { GoogleFlowAdapter } from './google-flow.js';
+import { HiggsfieldAdapter } from './higgsfield.js';
+import { PlaywrightAdapter } from './playwright.js';
+import { Context7Adapter } from './context7.js';
+import { SupabaseAdapter } from './supabase.js';
+import { ExaAdapter } from './exa.js';
+import { RedditAdapter } from './reddit.js';
 import {
   DockerAdapter,
   GitHubApiAdapter,
@@ -40,13 +52,26 @@ export * from './sqlite-adapter.js';
 export * from './http-adapter.js';
 export * from './git-adapter.js';
 export * from './youtube-adapter.js';
+export * from './linkedin.js';
+export * from './x.js';
+export * from './northwest.js';
+export * from './wordpress.js';
+export * from './cloudflare.js';
+export * from './hostinger.js';
+export * from './google-flow.js';
+export * from './higgsfield.js';
+export * from './playwright.js';
+export * from './context7.js';
+export * from './supabase.js';
+export * from './exa.js';
+export * from './reddit.js';
 export * from './developer-adapters.js';
 export * from './cloud-adapters.js';
 export * from './communication-adapters.js';
 export * from './service-adapters.js';
 
 /**
- * Instantiate all 25 native AgentForge integration adapters.
+ * Instantiate all native AgentForge integration adapters.
  */
 export function createBuiltinAdapters(): BaseIntegrationAdapter[] {
   return [
@@ -55,6 +80,10 @@ export function createBuiltinAdapters(): BaseIntegrationAdapter[] {
     new HttpAdapter(),
     new GitAdapter(),
     new YouTubeAdapter(),
+    new LinkedInAdapter(),
+    new XAdapter(),
+    new NorthwestAdapter(),
+    new WordPressAdapter(),
     new DockerAdapter(),
     new GitHubApiAdapter(),
     new GitLabAdapter(),
@@ -63,6 +92,14 @@ export function createBuiltinAdapters(): BaseIntegrationAdapter[] {
     new SentryAdapter(),
     new AwsS3Adapter(),
     new CloudflareAdapter(),
+    new HostingerAdapter(),
+    new GoogleFlowAdapter(),
+    new HiggsfieldAdapter(),
+    new PlaywrightAdapter(),
+    new Context7Adapter(),
+    new SupabaseAdapter(),
+    new ExaAdapter(),
+    new RedditAdapter(),
     new PostgresAdapter(),
     new RedisAdapter(),
     new MongoDbAdapter(),

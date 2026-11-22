@@ -1,0 +1,152 @@
+{
+  "schema": "1.0",
+  "name": "reddit",
+  "displayName": "Reddit Omni-Platform",
+  "description": "Comprehensive Reddit bridge: browse subreddits, submit posts, fetch threaded comments, reply, upvote/downvote, inspect karma profiles, community moderation, and inbox messaging.",
+  "version": "1.0.0",
+  "category": "communication",
+  "capabilities": [
+    {
+      "action": "get-subreddit",
+      "description": "Inspect subreddit metadata, subscriber count, active users, community rules, and flair options",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "list-posts",
+      "description": "Fetch subreddit post feed sorted by hot, new, top, or rising with time-range filtering",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "get-post",
+      "description": "Retrieve full post details, score, author, upvote ratio, and root comment hierarchy",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-post",
+      "description": "Submit a text (self) post, URL link post, or media post to a designated subreddit",
+      "permissionLevel": "publish",
+      "sideEffects": true
+    },
+    {
+      "action": "edit-post",
+      "description": "Update the markdown body of an existing text submission",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-post",
+      "description": "Permanently remove a submission from Reddit",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "get-comments",
+      "description": "Fetch threaded comment tree for a specific post with custom sort",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "create-comment",
+      "description": "Post a reply to a Reddit submission or existing comment",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "edit-comment",
+      "description": "Edit the text body of an existing comment",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "delete-comment",
+      "description": "Delete a previously published comment",
+      "permissionLevel": "destructive",
+      "sideEffects": true
+    },
+    {
+      "action": "vote",
+      "description": "Cast an upvote (+1), downvote (-1), or clear vote (0) on a post or comment",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-user-profile",
+      "description": "Fetch Reddit user profile, post karma, comment karma, trophies, and cake day",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "search-reddit",
+      "description": "Search posts, subreddits, or users across Reddit with advanced syntax and sorting",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "moderate-post",
+      "description": "Perform moderator actions on submissions: approve, remove, mark spam, lock, pin/sticky, or assign flair",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "moderate-comment",
+      "description": "Perform moderator actions on comments: approve, remove, lock, distinguish as moderator",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    },
+    {
+      "action": "get-inbox",
+      "description": "Fetch user inbox messages, comment replies, post mentions, and notifications",
+      "permissionLevel": "read",
+      "sideEffects": false
+    },
+    {
+      "action": "reddit-raw-api",
+      "description": "Execute raw Reddit REST endpoint with authenticated OAuth bearer token",
+      "permissionLevel": "external-write",
+      "sideEffects": true
+    }
+  ],
+  "integrations": [
+    {
+      "name": "reddit-api",
+      "required": false,
+      "check": {
+        "type": "env-var",
+        "value": "REDDIT_CLIENT_ID"
+      }
+    }
+  ],
+  "auth": [
+    {
+      "name": "reddit-oauth",
+      "type": "oauth",
+      "description": "Reddit OAuth 2.0 application credentials (script or web app) with identity, read, submit, and vote scopes",
+      "required": false
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "get-subreddit|list-posts|get-post|get-comments|get-user-profile|search-reddit|get-inbox",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "edit-post|create-comment|edit-comment|vote|moderate-post|moderate-comment|reddit-raw-api",
+      "level": "external-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "create-post",
+      "level": "publish",
+      "requiresApproval": true
+    },
+    {
+      "actions": "delete-post|delete-comment",
+      "level": "destructive",
+      "requiresApproval": true
+    }
+  ]
+}

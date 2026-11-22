@@ -4,7 +4,7 @@
  * CLI output, MCP responses, or workflow records.
  */
 
-const SENSITIVE_KEY_PATTERN = /(token|secret|password|credential|authcode|authorization_code|client_secret|refresh_token|access_token|private_key|api_?key|apikey|sessionuri|uploadurl|upload_id|session_url)/i;
+const SENSITIVE_KEY_PATTERN = /(token|secret|password|credential|authcode|authorization_code|client_secret|refresh_token|access_token|private_key|api_?key|apikey|sessionuri|uploadurl|upload_id|session_url|authorization)/i;
 
 /**
  * Mask a secret string, leaving at most minimal hints or full redaction.
@@ -82,7 +82,8 @@ export function sanitizeErrorString(text: string, secretsToScrub: (string | unde
     }
   }
 
-  // 2. Scrub standard Google credential patterns and upload session tokens
+  // 2. Scrub Bearer tokens and standard OAuth credential patterns / upload session tokens
+  sanitized = sanitized.replace(/Bearer\s+[a-zA-Z0-9._~+/=-]{6,}/gi, 'Bearer [REDACTED]');
   sanitized = sanitized.replace(/ya29\.[a-zA-Z0-9_-]+/g, '[REDACTED_ACCESS_TOKEN]');
   sanitized = sanitized.replace(/1\/\/[a-zA-Z0-9_-]+/g, '[REDACTED_REFRESH_TOKEN]');
   sanitized = sanitized.replace(/GOCSPX-[a-zA-Z0-9_-]+/g, '[REDACTED_CLIENT_SECRET]');

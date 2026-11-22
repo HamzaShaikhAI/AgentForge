@@ -50,6 +50,7 @@ export const DEFAULT_MINIMAL_SCOPES = [
 
 export const YOUTUBE_READONLY_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
 export const YOUTUBE_UPLOAD_SCOPE = 'https://www.googleapis.com/auth/youtube.upload';
+export const YOUTUBE_MANAGE_SCOPE = 'https://www.googleapis.com/auth/youtube.force-ssl';
 export const YOUTUBE_SCOPES = [
   ...DEFAULT_MINIMAL_SCOPES,
   YOUTUBE_READONLY_SCOPE,
@@ -57,6 +58,7 @@ export const YOUTUBE_SCOPES = [
 export const YOUTUBE_PUBLISH_SCOPES = [
   ...YOUTUBE_SCOPES,
   YOUTUBE_UPLOAD_SCOPE,
+  YOUTUBE_MANAGE_SCOPE,
 ];
 
 export interface GoogleOAuthOptions {

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/agentforge-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="AgentForge Manager — Local-first integration and workflow platform" />
+    <title>AgentForge Manager</title>
+
+    <!-- Tailwind CSS (CDN fallback — no build plugin installed) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: ['attribute', '[data-theme="dark"]'],
+        theme: { extend: {} }
+      }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Theme flash prevention -->
+    <script>
+      (function() {
+        const saved = localStorage.getItem('agentforge-ui');
+        let theme = 'dark';
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            theme = parsed.state?.theme || 'system';
+            if (theme === 'system') {
+              theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+          } catch (e) {}
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -35,6 +35,7 @@ export interface ApprovalDecision {
   confirmed: boolean;
   reason?: string;
   expectedInputs?: Record<string, unknown>;
+  autoApproveRemaining?: boolean;
 }
 
 /**
@@ -555,42 +556,62 @@ export class WorkflowEngine {
         // Permission check enforcement
         if (!permCheck.allowed) {
           if (permCheck.requiresApproval) {
-            const approvalRequestId = `appr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-            const checkpoint: ApprovalCheckpoint = {
-              approvalRequestId,
-              runId: run.runId,
-              stepId: step.id,
-              provider: providerIdent,
-              action: actionIdent,
-              permissionLevel: permCheck.level,
-              inputs: resolvedInputs,
-              approvalReason: permCheck.reason,
-              createdAt: new Date().toISOString(),
-              status: 'pending',
-            };
+            if (run.autoApproveAll) {
+              // 1-Click auto-approval active for this run!
+              this.permissions.recordApproval(
+                providerIdent,
+                actionIdent,
+                permCheck.level,
+                '1-Click Auto-Approved (Operator)',
+                'Auto-approved via 1-Click Approve pipeline session',
+                resolvedInputs,
+              );
+              permCheck = {
+                allowed: true,
+                requiresApproval: false,
+                level: permCheck.level,
+                reason: 'Auto-approved via 1-Click Approve pipeline session',
+              };
+            } else {
+              const approvalRequestId = `appr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+              const checkpoint: ApprovalCheckpoint = {
+                approvalRequestId,
+                runId: run.runId,
+                stepId: step.id,
+                provider: providerIdent,
+                action: actionIdent,
+                permissionLevel: permCheck.level,
+                inputs: resolvedInputs,
+                approvalReason: permCheck.reason,
+                createdAt: new Date().toISOString(),
+                status: 'pending',
+              };
 
-            stepResult.status = 'waiting-approval';
-            stepResult.approvalRequestId = approvalRequestId;
+              stepResult.status = 'waiting-approval';
+              stepResult.approvalRequestId = approvalRequestId;
+              stepResult.error = permCheck.reason;
+
+              run.status = 'paused_for_approval';
+              run.pendingApproval = checkpoint;
+              run.error = `Waiting for approval: ${permCheck.reason}`;
+              await this.saveRun(run);
+              return run;
+            }
+          }
+
+          if (!permCheck.allowed) {
+            stepResult.status = 'failed';
             stepResult.error = permCheck.reason;
-
-            run.status = 'paused_for_approval';
-            run.pendingApproval = checkpoint;
-            run.error = `Waiting for approval: ${permCheck.reason}`;
-            await this.saveRun(run);
-            return run;
+            if (step.stopOnFailure !== false) {
+              await this.runCleanupSteps(workflow, run);
+              run.status = 'failed';
+              run.error = `Step "${step.id}" not permitted: ${permCheck.reason}`;
+              run.completedAt = new Date().toISOString();
+              await this.saveRun(run);
+              return run;
+            }
+            continue;
           }
-
-          stepResult.status = 'failed';
-          stepResult.error = permCheck.reason;
-          if (step.stopOnFailure !== false) {
-            await this.runCleanupSteps(workflow, run);
-            run.status = 'failed';
-            run.error = `Step "${step.id}" not permitted: ${permCheck.reason}`;
-            run.completedAt = new Date().toISOString();
-            await this.saveRun(run);
-            return run;
-          }
-          continue;
         }
 
         // Step is authorized: consume active pending approval if it matches this step
@@ -790,6 +811,39 @@ export class WorkflowEngine {
       stepResult.approvedBy = decision.approvedBy;
       stepResult.approvedAt = pending.approvedAt;
       delete stepResult.error;
+    }
+
+    if (decision.autoApproveRemaining) {
+      run.autoApproveAll = true;
+    }
+
+    await this.saveRun(run);
+    return run;
+  }
+
+  /**
+   * 1-Click Approve entire workflow run:
+   * Approves active checkpoint if present, sets autoApproveAll = true, and resumes execution to completion.
+   */
+  async approveAll(
+    runId: string,
+    decision?: Partial<ApprovalDecision>,
+  ): Promise<WorkflowRun> {
+    const run = await this.getRun(runId);
+    if (!run) {
+      throw new Error(`Workflow run "${runId}" not found`);
+    }
+
+    run.autoApproveAll = true;
+
+    if (run.status === 'paused_for_approval' && run.pendingApproval) {
+      await this.approveStep(runId, run.pendingApproval.approvalRequestId, {
+        approvedBy: decision?.approvedBy || 'Operator (1-Click)',
+        confirmed: true,
+        reason: decision?.reason || '1-Click Approve all steps',
+        autoApproveRemaining: true,
+      });
+      return this.resumeRun(runId);
     }
 
     await this.saveRun(run);

@@ -115,10 +115,14 @@ describe('Manager Server & Security Tests', () => {
     expect(badResult.errors.length).toBeGreaterThan(0);
   });
 
-  it('serves dashboard index.html on root path', async () => {
+  it('serves dashboard index.html on root path and enforces hardened security headers', async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/html');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+    expect(res.headers.get('content-security-policy')).toContain("default-src 'self'");
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
     const text = await res.text();
     expect(text).toContain('AgentForge Manager');
   });

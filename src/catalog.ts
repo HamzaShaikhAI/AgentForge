@@ -59,7 +59,7 @@ export interface UnifiedCatalog {
   timestamp: string;
 }
 
-const BUILTIN_BRIDGE_NAMES = new Set(['github', 'example', 'example-echo', 'youtube']);
+const BUILTIN_BRIDGE_NAMES = new Set(['github', 'youtube', 'linkedin', 'x', 'northwest', 'wordpress', 'cloudflare', 'docker', 'slack', 'discord', 'stripe', 'example', 'example-echo']);
 
 export class IntegrationCatalog {
   private truthEngine: CapabilityTruthEngine;
@@ -155,6 +155,50 @@ export class IntegrationCatalog {
         } else {
           status = 'unconfigured';
           authStatus = 'OAuth client unconfigured';
+        }
+      } else if (m.name === 'linkedin') {
+        const hasToken = Boolean(process.env.LINKEDIN_ACCESS_TOKEN?.trim());
+        const hasUrn = Boolean(process.env.LINKEDIN_PERSON_URN?.trim());
+        if (hasToken && hasUrn) {
+          status = 'configured';
+          authStatus = 'Configured via LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN';
+        } else if (hasToken) {
+          status = 'configured';
+          authStatus = 'LINKEDIN_ACCESS_TOKEN set; LINKEDIN_PERSON_URN required for posting';
+        } else {
+          status = 'unconfigured';
+          authStatus = 'LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN not set';
+        }
+      } else if (m.name === 'x') {
+        const hasToken = Boolean((process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN)?.trim());
+        if (hasToken) {
+          status = 'configured';
+          authStatus = 'Configured via X_ACCESS_TOKEN';
+        } else {
+          status = 'unconfigured';
+          authStatus = 'X_ACCESS_TOKEN not set';
+        }
+      } else if (m.name === 'northwest') {
+        const hasKey = Boolean((process.env.NORTHWEST_API_KEY || process.env.NORTHWEST_SECRET)?.trim());
+        if (hasKey) {
+          status = 'connected';
+          authStatus = 'Connected via Northwest Registered Agent API Key';
+        } else {
+          status = 'available';
+          authStatus = 'Native DNS & Domain Management (hamzashaikhai.com)';
+        }
+      } else if (m.name === 'wordpress') {
+        const hasAuth = Boolean(process.env.WORDPRESS_APP_PASSWORD || process.env.WORDPRESS_PASSWORD);
+        const hasUrl = Boolean(process.env.WORDPRESS_URL);
+        if (hasAuth && hasUrl) {
+          status = 'connected';
+          authStatus = `Connected to ${process.env.WORDPRESS_URL} via Application Password`;
+        } else if (hasUrl) {
+          status = 'configured';
+          authStatus = `Connected to ${process.env.WORDPRESS_URL} (Public REST Mode)`;
+        } else {
+          status = 'available';
+          authStatus = 'Native WordPress REST API v2 & WP-CLI Engine';
         }
       }
 

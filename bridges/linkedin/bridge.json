@@ -1,0 +1,167 @@
+{
+  "schema": "1.0",
+  "name": "linkedin",
+  "displayName": "LinkedIn",
+  "description": "LinkedIn REST API v202601 integration: inspect member identity, draft local post previews, upload image assets, and publish posts with strict approval gates.",
+  "version": "1.0.0",
+  "author": "AgentForge",
+  "category": "social-media",
+  "capabilities": [
+    {
+      "action": "profile-me",
+      "description": "Verify LinkedIn access token and fetch authenticated member identity via /v2/userinfo",
+      "permissionLevel": "read",
+      "sideEffects": false,
+      "inputs": [],
+      "outputs": [
+        { "name": "sub", "type": "string", "description": "LinkedIn member subject ID" },
+        { "name": "personUrn", "type": "string", "description": "Formatted LinkedIn person URN (urn:li:person:...)" },
+        { "name": "name", "type": "string", "description": "Member full display name" },
+        { "name": "givenName", "type": "string", "description": "Member given name" },
+        { "name": "familyName", "type": "string", "description": "Member family name" },
+        { "name": "email", "type": "string", "description": "Member email address if openid email scope granted" },
+        { "name": "picture", "type": "string", "description": "Profile picture URL" },
+        { "name": "verified", "type": "boolean", "description": "Whether token verification succeeded" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response status code" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 verification timestamp" }
+      ]
+    },
+    {
+      "action": "draft-post",
+      "description": "Format and validate a LinkedIn post (text commentary, optional article URL, optional poll, optional image metadata) and save a preview JSON locally",
+      "permissionLevel": "local-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "commentary", "type": "string", "description": "Post commentary text (1 to 3000 characters)", "required": true },
+        { "name": "outputPath", "type": "string", "description": "Optional local file path for saving the JSON preview", "required": false },
+        { "name": "visibility", "type": "string", "description": "Post visibility: PUBLIC or CONNECTIONS", "required": false, "default": "PUBLIC" },
+        { "name": "articleUrl", "type": "string", "description": "Optional article URL for link-card attachment", "required": false },
+        { "name": "articleTitle", "type": "string", "description": "Optional article headline", "required": false },
+        { "name": "articleDescription", "type": "string", "description": "Optional article summary", "required": false },
+        { "name": "poll", "type": "object", "description": "Optional interactive poll ({ question, options, duration })", "required": false },
+        { "name": "image", "type": "object", "description": "Optional image metadata ({ path, urn, altText })", "required": false }
+      ],
+      "outputs": [
+        { "name": "draftPath", "type": "string", "description": "Path where local preview JSON was written" },
+        { "name": "payload", "type": "object", "description": "Validated LinkedIn REST posts request body" },
+        { "name": "preview", "type": "object", "description": "Human-readable preview metadata" },
+        { "name": "characterCount", "type": "number", "description": "Commentary character length" },
+        { "name": "saved", "type": "boolean", "description": "Whether preview JSON was persisted locally" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 creation timestamp" }
+      ]
+    },
+    {
+      "action": "upload-image",
+      "description": "Initialize and upload a local PNG/JPG/GIF image asset using LinkedIn Images API (initializeUpload + binary PUT)",
+      "permissionLevel": "external-write",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "filePath", "type": "string", "description": "Local path to a PNG, JPG/JPEG, or GIF image file", "required": true },
+        { "name": "ownerUrn", "type": "string", "description": "Optional owner URN (defaults to LINKEDIN_PERSON_URN)", "required": false },
+        { "name": "altText", "type": "string", "description": "Optional accessible alt text description", "required": false }
+      ],
+      "outputs": [
+        { "name": "success", "type": "boolean", "description": "Whether image upload completed" },
+        { "name": "imageUrn", "type": "string", "description": "Registered LinkedIn image URN (urn:li:image:...)" },
+        { "name": "ownerUrn", "type": "string", "description": "Owner URN associated with uploaded asset" },
+        { "name": "mimeType", "type": "string", "description": "Uploaded image MIME type" },
+        { "name": "bytesUploaded", "type": "number", "description": "Uploaded image size in bytes" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP status returned by binary upload" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 completion timestamp" }
+      ]
+    },
+    {
+      "action": "publish-post",
+      "description": "Publish a text, link-card, poll, or image post to LinkedIn via REST /rest/posts",
+      "permissionLevel": "publish",
+      "sideEffects": true,
+      "inputs": [
+        { "name": "commentary", "type": "string", "description": "Post commentary text (1 to 3000 characters)", "required": true },
+        { "name": "visibility", "type": "string", "description": "Post visibility: PUBLIC or CONNECTIONS", "required": false, "default": "PUBLIC" },
+        { "name": "authorUrn", "type": "string", "description": "Optional author URN (defaults to LINKEDIN_PERSON_URN)", "required": false },
+        { "name": "articleUrl", "type": "string", "description": "Optional URL for link-card attachment", "required": false },
+        { "name": "articleTitle", "type": "string", "description": "Optional article title", "required": false },
+        { "name": "articleDescription", "type": "string", "description": "Optional article description", "required": false },
+        { "name": "imageUrn", "type": "string", "description": "Optional urn:li:image:... from upload-image", "required": false },
+        { "name": "imageAltText", "type": "string", "description": "Optional image alt text", "required": false },
+        { "name": "poll", "type": "object", "description": "Optional interactive poll ({ question, options, duration })", "required": false }
+      ],
+      "outputs": [
+        { "name": "published", "type": "boolean", "description": "Whether the post was created on LinkedIn" },
+        { "name": "postUrn", "type": "string", "description": "Created LinkedIn post URN (from x-restli-id)" },
+        { "name": "postUrl", "type": "string", "description": "Direct feed URL for the created post" },
+        { "name": "visibility", "type": "string", "description": "Confirmed post visibility" },
+        { "name": "httpStatus", "type": "number", "description": "HTTP response status code" },
+        { "name": "timestamp", "type": "string", "description": "ISO 8601 publication timestamp" }
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "name": "linkedin-access-token",
+      "check": { "type": "env-var", "value": "LINKEDIN_ACCESS_TOKEN" },
+      "required": true,
+      "setupInstructions": "Set LINKEDIN_ACCESS_TOKEN to an active OAuth 2.0 Bearer token with openid, profile, and w_member_social scopes."
+    },
+    {
+      "name": "linkedin-person-urn",
+      "check": { "type": "env-var", "value": "LINKEDIN_PERSON_URN" },
+      "required": true,
+      "setupInstructions": "Set LINKEDIN_PERSON_URN to your LinkedIn member URN (e.g., urn:li:person:XXXXXXXX)."
+    }
+  ],
+  "auth": [
+    {
+      "name": "linkedin-access-token",
+      "type": "env-var",
+      "envVar": "LINKEDIN_ACCESS_TOKEN",
+      "description": "LinkedIn OAuth 2.0 Bearer access token injected at runtime (never stored in manifests or logs)",
+      "required": true,
+      "scopes": ["openid", "profile", "w_member_social"]
+    },
+    {
+      "name": "linkedin-person-urn",
+      "type": "env-var",
+      "envVar": "LINKEDIN_PERSON_URN",
+      "description": "Authenticated LinkedIn member person URN used as author and image upload owner",
+      "required": true
+    }
+  ],
+  "permissions": [
+    {
+      "actions": "profile-me",
+      "level": "read",
+      "requiresApproval": false
+    },
+    {
+      "actions": "draft-post",
+      "level": "local-write",
+      "requiresApproval": false
+    },
+    {
+      "actions": "upload-image",
+      "level": "external-write",
+      "requiresApproval": true,
+      "approvalReason": "Uploads a local image binary to LinkedIn servers via the Images API. Explicit human approval is required."
+    },
+    {
+      "actions": "publish-post",
+      "level": "publish",
+      "requiresApproval": true,
+      "approvalReason": "Publishes a live post to LinkedIn visible to your connections or the public. Explicit human approval is required."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["windows", "macos", "linux"]
+  },
+  "test": {
+    "smokeTest": "profile-me",
+    "verificationSteps": [
+      "Export LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN environment variables",
+      "Run profile-me to verify token authenticity and inspect member URN",
+      "Run draft-post to validate post commentary/attachments and preview JSON output locally",
+      "Approve and run upload-image (if attaching media) followed by publish-post"
+    ]
+  },
+  "tags": ["linkedin", "social-media", "publishing", "posts", "rest-api"]
+}
