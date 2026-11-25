@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/HamzaShaikhAI/AgentForge/stargazers"><img src="https://img.shields.io/github/stars/HamzaShaikhAI/AgentForge?style=for-the-badge&logo=github&label=%E2%AD%90%20Star%20This%20Repo%20If%20It%20Saved%20You%20Time&color=f59e0b" alt="Star AgentForge on GitHub" /></a>
   <a href="https://github.com/HamzaShaikhAI/AgentForge/releases"><img src="https://img.shields.io/badge/release-v1.1.0--stable-blueviolet?style=for-the-badge&logo=github" alt="Release v1.1.0 Stable" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node.js-%3E%3D20.0.0-68a063?style=for-the-badge&logo=node.js" alt="Node.js >=20" /></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.6_strict-3178c6?style=for-the-badge&logo=typescript" alt="TypeScript 5.6" /></a>
@@ -14,9 +15,21 @@
 <h1 align="center">AgentForge (v1.1.0 Stable)</h1>
 
 <p align="center">
-  <strong>The Enterprise-Grade Multi-Agent Capability Runtime & Universal Model Context Protocol (MCP) Gateway for Google Antigravity.</strong><br>
-  <em>Equipping reasoning models with deterministic execution boundaries, 38+ production native bridges, Google Flow generative media studios, and zero-leak cryptographic security.</em>
+  <strong>By <a href="https://hamzashaikhai.com/agentforge/">HamzaShaikhAI</a> — Systems &amp; Local-First AI Engineer</strong><br>
+  <strong>The Local-First MCP Firewall &amp; Multi-Agent Capability Runtime for Google Antigravity, Claude Code &amp; Autonomous Agents.</strong><br>
+  <em>Stop rogue agent commands before they happen with 5-tier cryptographic permission gates, 38+ bridges, and hardware DPAPI secret vaults.</em>
 </p>
+
+<p align="center">
+  <img src="assets/agentforge-demo.gif" alt="AgentForge Zero-Trust MCP Approval Gate Before & After" width="760" />
+</p>
+
+```bash
+# ⚡ 3-Command Quickstart (Verify all 508 zero-trust tests locally)
+git clone https://github.com/HamzaShaikhAI/AgentForge.git && cd AgentForge
+npm install && npm run build
+npx vitest run
+```
 
 ---
 
