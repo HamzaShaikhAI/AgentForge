@@ -180,6 +180,21 @@ AgentForge enforces military-grade privacy and credential protection:
 
 ---
 
+## 🛒 Official AI Agent Skills on Agensi
+
+Prefer plug-and-play `SKILL.md` skills for **Claude Code, Cursor, Codex CLI, Gemini CLI, or Google Antigravity**? Grab modular AgentForge skills on the **[Hamza Shaikh Agensi Creator Store](https://agensi.io/creators/hamzashaikhai)**:
+
+| Skill | Price | What It Does | Link |
+| :--- | :---: | :--- | :--- |
+| **MCP & SKILL.md Readiness Audit** | **Free** | Offline secret-leak scanner, YAML frontmatter check & JSON validator | [Install Free](https://agensi.io/skills/mcp-skill-md-readiness-audit-secret-leak-schema-check) |
+| **API Bridge Schema & AGENTS.md Builder** | **Free** | Scaffolds & validates schema v1.0 bridges and 5-tier approval guardrails | [Install Free](https://agensi.io/skills/api-bridge-schema-agents-md-guardrails-builder) |
+| **X & LinkedIn Auto-Publisher** | **\$2** | Dry-run previews, thread auto-splitting & live `/2/tweets` + `/rest/posts` dispatch | [Get on Agensi](https://agensi.io/skills/x-linkedin-auto-publisher-posts-threads-media) |
+| **YouTube Video Uploader** | **\$3** | Resumable Google API uploads, SHA-256 verification & channel inspect | [Get on Agensi](https://agensi.io/skills/youtube-video-uploader-resumable-api-channel-manager) |
+| **Windows Desktop Automator** | **\$3** | Windows screen capture, vision coordinate clicks, typing & hotkeys (0 pip deps) | [Get on Agensi](https://agensi.io/skills/windows-desktop-automator-screen-vision-clicks-hotkeys) |
+| **AgentForge Automation Suite (Bundle)** | **\$5** | All 8 verified service bridges (`github`, `youtube`, `x`, `linkedin`, `desktop`, `discord`, `slack`, `stripe`), CLI scripts & `AGENTS.md` rules | [Get Bundle](https://agensi.io/skills/agentforge-automation-suite-8-app-bridges-guardrails) |
+
+---
+
 ## 🛠️ Quick Start Guide
 
 ### 1. Installation
